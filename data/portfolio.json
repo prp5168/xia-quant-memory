@@ -1,6 +1,6 @@
 {
   "initialCapital": 100,
-  "cash": 56.34,
+  "cash": 48.24,
   "positions": [
     {
       "slug": "highest-temperature-in-seoul-on-march-19-2026-9c",
@@ -258,6 +258,36 @@
           "cost": 9.66
         }
       ]
+    },
+    {
+      "slug": "highest-temperature-in-milan-on-march-19-2026-18corhigher",
+      "station": "Milan",
+      "date": "2026-03-19",
+      "dayName": "Thursday",
+      "tempLabel": "18°C or higher",
+      "k": 18,
+      "dir": "BUY_YES",
+      "entryPrice": 0.405,
+      "shares": 20,
+      "cost": 8.1,
+      "entryTime": "2026-03-18T14:38:36.266Z",
+      "modelPAtEntry": 0.599,
+      "yesPAtEntry": 0.345,
+      "edgeAtEntry": 0.254,
+      "forecastMaxAtEntry": 18,
+      "muAtEntry": 17.7,
+      "fills": [
+        {
+          "price": 0.4,
+          "shares": 10,
+          "cost": 4
+        },
+        {
+          "price": 0.41,
+          "shares": 10,
+          "cost": 4.1
+        }
+      ]
     }
   ],
   "closedTrades": [
@@ -458,7 +488,7 @@
   ],
   "totalPnl": 39.700241000000005,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-18T14:06:40.006Z",
+  "updatedAt": "2026-03-18T14:38:36.266Z",
   "rules": {
     "maxPositionPct": 0.15,
     "maxSingleTrade": 15,

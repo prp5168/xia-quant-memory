@@ -41,10 +41,11 @@ function getScanDaysForStation(station) {
 
 const STATIONS = [
   { name: 'Shanghai', icao: 'ZSPD', geocode: '31.15,121.803', metarId: 'ZSPD', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14 },
+  { name: 'Dallas', icao: 'KDFW', geocode: '32.899,-97.040', metarId: 'KDFW', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14 },
+  { name: 'London', icao: 'EGLL', geocode: '51.470,-0.454', metarId: 'EGLL', tz: 'Europe/London', utcOffset: 0, peakStartLocal: 6, peakEndLocal: 14 },
   { name: 'Seoul', icao: 'RKSI', geocode: '37.469,126.451', metarId: 'RKSI', tz: 'Asia/Seoul', utcOffset: 9, peakStartLocal: 6, peakEndLocal: 14 },
-  // 后续新增城市模板:
-  // { name: 'NYC', icao: 'KJFK', geocode: '40.64,-73.78', metarId: 'KJFK', tz: 'America/New_York', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14 },
-  // { name: 'London', icao: 'EGLL', geocode: '51.47,-0.46', metarId: 'EGLL', tz: 'Europe/London', utcOffset: 0, peakStartLocal: 6, peakEndLocal: 14 },
+  { name: 'Wellington', icao: 'NZWN', geocode: '-41.327,174.805', metarId: 'NZWN', tz: 'Pacific/Auckland', utcOffset: 13, peakStartLocal: 6, peakEndLocal: 14 },
+  { name: 'Milan', icao: 'LIMC', geocode: '45.630,8.723', metarId: 'LIMC', tz: 'Europe/Rome', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14 },
 ];
 
 // ─── Math ──────────────────────────────────────────────────

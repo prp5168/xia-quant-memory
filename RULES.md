@@ -9,7 +9,7 @@
 ## 扫描分工
 - 全量扫描（1小时）：找明天/后天新机会 + 检查已有仓位止损/止盈
 - 加密扫描（30分钟）：只盯已有仓位止损/止盈，不开新仓
-- 城市：上海（ZSPD）、首尔（RKSI）
+- 城市：上海（ZSPD）、达拉斯（KDFW）、伦敦（EGLL）、首尔（RKSI）、惠灵顿（NZWN）、米兰（LIMC）
 - 数据源：TWC API（WU 同源）+ Polymarket Gamma/CLOB + NOAA METAR
 - σ = 0.8
 
