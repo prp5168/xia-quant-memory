@@ -1,6 +1,6 @@
 {
-  "initialCapital": 100,
-  "cash": 48.24,
+  "initialCapital": 400,
+  "cash": 343.21,
   "positions": [
     {
       "slug": "highest-temperature-in-seoul-on-march-19-2026-9c",
@@ -98,9 +98,9 @@
       "tempLabel": "9°C",
       "k": 9,
       "dir": "BUY_YES",
-      "entryPrice": 0.2302,
-      "shares": 64.94,
-      "cost": 14.95,
+      "entryPrice": 0.2207,
+      "shares": 90.53999999999999,
+      "cost": 19.98,
       "entryTime": "2026-03-18T06:28:31.869Z",
       "modelPAtEntry": 0.469,
       "yesPAtEntry": 0.19,
@@ -132,6 +132,20 @@
           "price": 0.28,
           "shares": 5,
           "cost": 1.4
+        }
+      ],
+      "toppedUp": true,
+      "topupTime": "2026-03-18T15:26:25.702Z",
+      "topupFills": [
+        {
+          "price": 0.19,
+          "shares": 8.6,
+          "cost": 1.63
+        },
+        {
+          "price": 0.2,
+          "shares": 17,
+          "cost": 3.4
         }
       ]
     },
@@ -488,10 +502,10 @@
   ],
   "totalPnl": 39.700241000000005,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-18T14:38:36.266Z",
+  "updatedAt": "2026-03-18T15:26:25.702Z",
   "rules": {
     "maxPositionPct": 0.15,
-    "maxSingleTrade": 15,
+    "maxSingleTrade": 20,
     "minEdge": 0.2,
     "sellEdgeReverse": 0.2,
     "stopLossConditions": [
