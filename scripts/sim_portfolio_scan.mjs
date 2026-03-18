@@ -1,0 +1,711 @@
+// Simulated Portfolio Scanner
+// - Reads portfolio.json
+// - Scans markets for buy/sell/stop-loss signals
+// - Executes simulated trades
+// - Writes back to portfolio.json
+// - Outputs actions for Telegram notification
+
+import { readFile, writeFile } from 'node:fs/promises';
+
+const TWC_API_KEY = 'e1f10a1e78da46f5b10a1e78da96f525';
+const PORTFOLIO_PATH = 'data/portfolio.json';
+
+// MODE: "full" (today+tomorrow+day-after) or "today-only" (only today's markets, for intraday intensive scan)
+// In today-only mode: ONLY check existing positions for stop-loss/take-profit, NO new buys
+// In full mode: check existing positions + scan tomorrow/day-after for NEW buys (not today)
+// Rationale: we earn from "uncertainty premium decay" — buy a day early, sell as odds converge
+const SCAN_MODE = process.env.SCAN_MODE || 'full';
+
+function getLocalHour(utcOffset) {
+  const now = new Date();
+  return (now.getUTCHours() + utcOffset + 24) % 24;
+}
+
+function getLocalDateStr(utcOffset) {
+  const now = new Date();
+  const local = new Date(now.getTime() + utcOffset * 3600000);
+  return local.toISOString().slice(0, 10);
+}
+
+function isInPeakHours(station) {
+  const localHour = getLocalHour(station.utcOffset);
+  return localHour >= station.peakStartLocal && localHour < station.peakEndLocal;
+}
+
+function getScanDaysForStation(station) {
+  if (SCAN_MODE === 'full') return 3;
+  // today-only: only scan if this city is currently in its peak hours
+  if (isInPeakHours(station)) return 1;
+  return 0; // skip this city entirely if outside peak hours
+}
+
+const STATIONS = [
+  { name: 'Shanghai', icao: 'ZSPD', geocode: '31.15,121.803', metarId: 'ZSPD', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14 },
+  { name: 'Seoul', icao: 'RKSI', geocode: '37.469,126.451', metarId: 'RKSI', tz: 'Asia/Seoul', utcOffset: 9, peakStartLocal: 6, peakEndLocal: 14 },
+  // 后续新增城市模板:
+  // { name: 'NYC', icao: 'KJFK', geocode: '40.64,-73.78', metarId: 'KJFK', tz: 'America/New_York', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14 },
+  // { name: 'London', icao: 'EGLL', geocode: '51.47,-0.46', metarId: 'EGLL', tz: 'Europe/London', utcOffset: 0, peakStartLocal: 6, peakEndLocal: 14 },
+];
+
+// ─── Math ──────────────────────────────────────────────────
+function normCdf(x){const s=x<0?-1:1;x=Math.abs(x)/Math.SQRT2;const t=1/(1+0.3275911*x);const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429;return 0.5*(1+s*(1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x)));}
+function pBin(mu,sig,k){return Math.max(0,normCdf((k+0.5-mu)/sig)-normCdf((k-0.5-mu)/sig));}
+function buildDist(mu,sigma){const p={};let t=0;for(let k=Math.floor(mu-5);k<=Math.ceil(mu+5);k++){const v=pBin(mu,sigma,k);if(v>0.001){p[k]=v;t+=v;}}for(const k of Object.keys(p))p[k]/=t;return p;}
+
+// ─── API helpers ───────────────────────────────────────────
+async function fetchJSON(url){const r=await fetch(url,{headers:{'User-Agent':'openclaw-weather-arb/0.1'}});if(!r.ok)throw new Error(`${r.status} ${url.slice(0,80)}`);return r.json();}
+
+async function getTWCForecast(geocode){
+  return fetchJSON(`https://api.weather.com/v3/wx/forecast/daily/10day?apiKey=${TWC_API_KEY}&geocode=${encodeURIComponent(geocode)}&units=m&language=en-US&format=json`);
+}
+async function getTWCHourly(geocode){
+  return fetchJSON(`https://api.weather.com/v3/wx/forecast/hourly/15day?apiKey=${TWC_API_KEY}&geocode=${encodeURIComponent(geocode)}&units=m&language=en-US&format=json`);
+}
+async function getMETAR(icao){
+  return fetchJSON(`https://aviationweather.gov/api/data/metar?ids=${icao}&hours=6&format=json`);
+}
+async function getPMEvent(slug){
+  const arr=await fetchJSON(`https://gamma-api.polymarket.com/events?slug=${encodeURIComponent(slug)}`);
+  return arr[0]||null;
+}
+async function getBook(tokenId){
+  return fetchJSON(`https://clob.polymarket.com/book?token_id=${encodeURIComponent(tokenId)}`);
+}
+
+function parseBook(book){
+  const bids=(book?.bids||[]).map(x=>({p:Number(x.price),s:Number(x.size)})).filter(x=>Number.isFinite(x.p)&&x.p>0).sort((a,b)=>b.p-a.p);
+  const asks=(book?.asks||[]).map(x=>({p:Number(x.price),s:Number(x.size)})).filter(x=>Number.isFinite(x.p)&&x.p>0).sort((a,b)=>a.p-b.p);
+  const bestBid=bids[0]?.p??null;
+  const bestAsk=asks[0]?.p??null;
+  const mid=(bestBid!=null&&bestAsk!=null)?(bestBid+bestAsk)/2:null;
+  const spread=(bestBid!=null&&bestAsk!=null)?bestAsk-bestBid:null;
+
+  // Simulate eating the book: given a USD budget, walk levels and return fills
+  // side='ask' → buying YES (eat asks); side='bid' → selling YES / buying NO (eat bids)
+  function simulateFill(side, budgetUsd){
+    const levels=side==='ask'?asks:bids;
+    if(!levels.length) return{filled:false,shares:0,cost:0,avgPrice:null,fills:[],worstPrice:null};
+    let remaining=budgetUsd;
+    let totalShares=0;
+    let totalCost=0;
+    const fills=[];
+    let worst=null;
+    for(const lv of levels){
+      if(remaining<=0) break;
+      const maxSharesAtLevel=lv.s;
+      const costPerShare=lv.p;
+      const affordShares=Math.floor(remaining/costPerShare);
+      const takeShares=Math.min(affordShares, maxSharesAtLevel);
+      if(takeShares<=0) break;
+      const takeCost=takeShares*costPerShare;
+      totalShares+=takeShares;
+      totalCost+=takeCost;
+      remaining-=takeCost;
+      worst=lv.p;
+      fills.push({price:lv.p, shares:takeShares, cost:Math.round(takeCost*100)/100});
+    }
+    return{
+      filled:totalShares>0,
+      shares:totalShares,
+      cost:Math.round(totalCost*100)/100,
+      avgPrice:totalShares>0?Math.round(totalCost/totalShares*10000)/10000:null,
+      worstPrice:worst,
+      fills,
+      remainingBudget:Math.round(remaining*100)/100,
+    };
+  }
+
+  function capWithin(side,pct){
+    const arr2=side==='ask'?asks:bids;
+    if(!arr2.length)return{shares:0,usd:0};
+    const ref=arr2[0].p;
+    const lim=side==='ask'?ref*(1+pct):ref*(1-pct);
+    let sh=0,usd=0;
+    for(const x of arr2){
+      if(side==='ask'&&x.p>lim)break;
+      if(side==='bid'&&x.p<lim)break;
+      sh+=x.s;usd+=x.s*x.p;
+    }
+    return{shares:Math.round(sh),usd:Math.round(usd)};
+  }
+  return{bestBid,bestAsk,mid,spread,bids,asks,simulateFill,askCap5:capWithin('ask',0.05),bidCap5:capWithin('bid',0.05),askCap10:capWithin('ask',0.10),bidCap10:capWithin('bid',0.10)};
+}
+
+function dateSlug(dateStr,city){
+  const d=new Date(dateStr+'T00:00:00Z');
+  const months=['january','february','march','april','may','june','july','august','september','october','november','december'];
+  return`highest-temperature-in-${city.toLowerCase()}-on-${months[d.getUTCMonth()]}-${d.getUTCDate()}-${d.getUTCFullYear()}`;
+}
+
+// ─── Main ──────────────────────────────────────────────────
+async function main(){
+  const now=new Date();
+  const pf=JSON.parse(await readFile(PORTFOLIO_PATH,'utf8'));
+  const rules=pf.rules;
+  const actions=[]; // will be output as notifications
+
+  // Initialize stoppedToday tracker (resets daily)
+  if(!pf.stoppedToday) pf.stoppedToday = {};
+  const todayStr = now.toISOString().slice(0,10);
+  // Clean old entries (only keep today's)
+  for(const key of Object.keys(pf.stoppedToday)){
+    if(!key.startsWith(todayStr)) delete pf.stoppedToday[key];
+  }
+
+  actions.push(`🎲 模拟盘扫描 | ${now.toISOString()} | 资金$${pf.cash.toFixed(2)}/${pf.initialCapital} | 模式:${SCAN_MODE}`);
+  if(pf.positions.length) actions.push(`📦 持仓${pf.positions.length}个`);
+
+  // ─── Phase 1: Check existing positions for SELL/STOP-LOSS ───
+  const prevForecastCache={};
+
+  for(let pi=pf.positions.length-1;pi>=0;pi--){
+    const pos=pf.positions[pi];
+    // Get current market price
+    let currentYesP=null, book=null, ba={};
+    try{
+      const mkt=await fetchJSON(`https://gamma-api.polymarket.com/markets?slug=${encodeURIComponent(pos.slug)}`);
+      const m=mkt[0];
+      if(m){
+        const px=JSON.parse(m.outcomePrices||'[]');
+        currentYesP=Number(px[0]||0);
+        if(m.closed){
+          // Market closed/resolved
+          const resolved=currentYesP>0.95?1:(currentYesP<0.05?0:currentYesP);
+          const pnl=pos.dir==='BUY_YES'?(resolved-pos.entryPrice)*pos.shares:(pos.entryPrice-resolved)*pos.shares;
+          // Actually for NO: pnl = shares * ((1-resolved) - (1-entryPrice)) if bought No
+          // Simplified: 
+          let exitVal;
+          if(pos.dir==='BUY_YES') exitVal=resolved*pos.shares;
+          else exitVal=(1-resolved)*pos.shares;
+          const cost=pos.cost;
+          const realPnl=exitVal-cost;
+          pf.cash+=exitVal;
+          pf.totalPnl+=realPnl;
+          pf.closedTrades.push({...pos, exitPrice:resolved, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:'resolved'});
+          pf.positions.splice(pi,1);
+          actions.push(`🏁 结算: ${pos.station} ${pos.tempLabel} ${pos.dir} | 成本$${cost.toFixed(2)} 回收$${exitVal.toFixed(2)} PnL=$${realPnl.toFixed(2)}`);
+          continue;
+        }
+        const tokenIds=JSON.parse(m.clobTokenIds||'[]');
+        try{book=await getBook(tokenIds[0]);ba=parseBook(book);}catch{}
+      }
+    }catch{}
+
+    if(currentYesP==null) continue;
+
+    // Get current model probability
+    const st=STATIONS.find(s=>s.name===pos.station);
+    if(!st) continue;
+
+    let modelP=null;
+    try{
+      const daily=await getTWCForecast(st.geocode);
+      const hourly=await getTWCHourly(st.geocode);
+      const dates=daily.validTimeLocal.map(d=>d.slice(0,10));
+      const idx=dates.indexOf(pos.date);
+      if(idx>=0){
+        const fMax=daily.calendarDayTemperatureMax[idx];
+        const hTemps=[];
+        for(let h=0;h<(hourly.validTimeLocal||[]).length;h++){
+          if(hourly.validTimeLocal[h]?.startsWith(pos.date)) hTemps.push(hourly.temperature[h]);
+        }
+        const hMax=hTemps.length?Math.max(...hTemps):fMax;
+        let mu=fMax*0.7+hMax*0.3;
+        const dp=daily.daypart?.[0]||{};
+        const dpi=idx*2;
+        if((dp.qpf?.[dpi]||0)>5&&(dp.cloudCover?.[dpi]||0)>80) mu-=0.3;
+        if((dp.windSpeed?.[dpi]||0)>30) mu-=0.2;
+        if((dp.relativeHumidity?.[dpi]||0)<40&&(dp.cloudCover?.[dpi]||0)<30) mu+=0.3;
+        const dist=buildDist(mu,rules.sigma);
+        modelP=dist[pos.k]||0;
+
+        // Check for forecast shift (stop-loss trigger)
+        const forecastShift=Math.abs(fMax-(pos.forecastMaxAtEntry||fMax));
+        if(forecastShift>=2){
+          // STOP LOSS: forecast shifted by >=2C — MUST use market order (eat whatever is on book)
+          const slSide = pos.dir==='BUY_YES' ? 'bid' : 'ask';
+          const slBudget = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (ba.bestAsk||currentYesP||0.99));
+          const slFill = ba.simulateFill ? ba.simulateFill(slSide, slBudget) : null;
+          
+          let exitVal, exitPrice;
+          if(slFill && slFill.filled){
+            const exitShares = Math.min(slFill.shares, pos.shares);
+            exitPrice = slFill.avgPrice;
+            if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
+            else exitVal = exitShares * (1 - exitPrice);
+          } else {
+            // No liquidity at all — worst case assume 0 recovery
+            exitPrice = 0;
+            exitVal = 0;
+          }
+          const realPnl=exitVal-pos.cost;
+          pf.cash+=exitVal;
+          pf.totalPnl+=realPnl;
+          pf.closedTrades.push({...pos, exitPrice, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:`stop_loss_forecast_shift_${forecastShift}C`, orderType:'市价(强制)'});
+          pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+          pf.positions.splice(pi,1);
+          actions.push(`🚨 止损(市价): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 预报偏移${forecastShift}°C | 成交@${(exitPrice*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitVal.toFixed(2)} PnL=$${realPnl.toFixed(2)}`);
+          continue;
+        }
+
+        // ─── 硬止损 B: 盘口极端化 (BUY_NO but Yes>90%, or BUY_YES but Yes<10%) ───
+        const extremeStop = (pos.dir==='BUY_NO' && currentYesP > 0.90) || (pos.dir==='BUY_YES' && currentYesP < 0.10);
+        if(extremeStop){
+          const slSide2 = pos.dir==='BUY_YES' ? 'bid' : 'ask';
+          const slBudget2 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (ba.bestAsk||currentYesP||0.99));
+          const slFill2 = ba.simulateFill ? ba.simulateFill(slSide2, slBudget2) : null;
+          let exitVal2, exitPrice2;
+          if(slFill2 && slFill2.filled){
+            exitPrice2 = slFill2.avgPrice;
+            const exitShares2 = Math.min(slFill2.shares, pos.shares);
+            if(pos.dir==='BUY_YES') exitVal2 = exitShares2 * exitPrice2;
+            else exitVal2 = exitShares2 * (1 - exitPrice2);
+          } else { exitPrice2=pos.dir==='BUY_YES'?0:1; exitVal2=0; }
+          const realPnl2=exitVal2-pos.cost;
+          pf.cash+=exitVal2;
+          pf.totalPnl+=realPnl2;
+          pf.closedTrades.push({...pos, exitPrice:exitPrice2, exitTime:now.toISOString(), pnl:Math.round(realPnl2*100)/100, reason:`stop_loss_extreme_price_yes${Math.round(currentYesP*100)}pct`, orderType:'市价(强制)'});
+          pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+          pf.positions.splice(pi,1);
+          actions.push(`🚨 止损(盘口极端): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | Yes已到${(currentYesP*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitVal2.toFixed(2)} PnL=$${realPnl2.toFixed(2)}`);
+          continue;
+        }
+
+        // ─── 硬止损 C: METAR实测已达到对赌阈值 ───
+        try{
+          const metarArr = await getMETAR(st.metarId);
+          const todayMetars = metarArr.filter(m => m.reportTime?.startsWith(pos.date));
+          const metarTemps = todayMetars.map(m => m.temp).filter(Number.isFinite);
+          if(metarTemps.length > 0){
+            const metarMax = Math.max(...metarTemps);
+            // BUY_NO on k°C: if METAR already hit k, we're wrong
+            // BUY_YES on k°C: if METAR already exceeded k (max > k), then k won't be the final max (maybe higher)
+            const metarContradict = (pos.dir==='BUY_NO' && metarMax === pos.k) || (pos.dir==='BUY_YES' && metarMax > pos.k + 1);
+            if(metarContradict){
+              const slSide3 = pos.dir==='BUY_YES' ? 'bid' : 'ask';
+              const slBudget3 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (ba.bestAsk||currentYesP||0.99));
+              const slFill3 = ba.simulateFill ? ba.simulateFill(slSide3, slBudget3) : null;
+              let exitVal3, exitPrice3;
+              if(slFill3 && slFill3.filled){
+                exitPrice3 = slFill3.avgPrice;
+                const exitShares3 = Math.min(slFill3.shares, pos.shares);
+                if(pos.dir==='BUY_YES') exitVal3 = exitShares3 * exitPrice3;
+                else exitVal3 = exitShares3 * (1 - exitPrice3);
+              } else { exitPrice3=0; exitVal3=0; }
+              const realPnl3=exitVal3-pos.cost;
+              pf.cash+=exitVal3;
+              pf.totalPnl+=realPnl3;
+              pf.closedTrades.push({...pos, exitPrice:exitPrice3, exitTime:now.toISOString(), pnl:Math.round(realPnl3*100)/100, reason:`stop_loss_metar_confirmed_${metarMax}C`, orderType:'市价(强制)'});
+              pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+              pf.positions.splice(pi,1);
+              actions.push(`🚨 止损(METAR确认): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | METAR已测到${metarMax}°C | 成本$${pos.cost.toFixed(2)} 回收$${exitVal3.toFixed(2)} PnL=$${realPnl3.toFixed(2)}`);
+              continue;
+            }
+          }
+        }catch{}
+
+        // ─── 硬止损 A: 浮亏超过50% ───
+        {
+          let currentVal;
+          if(pos.dir==='BUY_YES') currentVal = pos.shares * currentYesP;
+          else currentVal = pos.shares * (1 - currentYesP);
+          const drawdown = (pos.cost - currentVal) / pos.cost;
+          if(drawdown >= 0.5){
+            const slSide4 = pos.dir==='BUY_YES' ? 'bid' : 'ask';
+            const slBudget4 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (ba.bestAsk||currentYesP||0.99));
+            const slFill4 = ba.simulateFill ? ba.simulateFill(slSide4, slBudget4) : null;
+            let exitVal4, exitPrice4;
+            if(slFill4 && slFill4.filled){
+              exitPrice4 = slFill4.avgPrice;
+              const exitShares4 = Math.min(slFill4.shares, pos.shares);
+              if(pos.dir==='BUY_YES') exitVal4 = exitShares4 * exitPrice4;
+              else exitVal4 = exitShares4 * (1 - exitPrice4);
+            } else { exitPrice4=0; exitVal4=0; }
+            const realPnl4=exitVal4-pos.cost;
+            pf.cash+=exitVal4;
+            pf.totalPnl+=realPnl4;
+            pf.closedTrades.push({...pos, exitPrice:exitPrice4, exitTime:now.toISOString(), pnl:Math.round(realPnl4*100)/100, reason:`stop_loss_drawdown_${Math.round(drawdown*100)}pct`, orderType:'市价(强制)'});
+            pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+            pf.positions.splice(pi,1);
+            actions.push(`🚨 止损(浮亏${Math.round(drawdown*100)}%): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 成本$${pos.cost.toFixed(2)} 现值$${currentVal.toFixed(2)} 回收$${exitVal4.toFixed(2)} PnL=$${realPnl4.toFixed(2)}`);
+            continue;
+          }
+        }
+      }
+    }catch{}
+
+    if(modelP==null) continue;
+
+    // Check sell condition: edge reversed >= 20%
+    const currentEdge = pos.dir==='BUY_YES' ? (modelP - currentYesP) : (currentYesP - modelP);
+
+    // ─── 鱼身v2: 结算日早晨时间止盈 ───
+    // If today is the settlement day and we're in the heating window, prioritize exiting profitable positions
+    if(pos.date === getLocalDateStr(st?.utcOffset||8)){
+      const localH = getLocalHour(st?.utcOffset||8);
+      if(localH >= 6 && localH <= 14){
+        // Settlement day, heating hours — check if profitable, if so exit
+        let currentVal;
+        if(pos.dir==='BUY_YES') currentVal = pos.shares * currentYesP;
+        else currentVal = pos.shares * (1 - currentYesP);
+        const floatPnl = currentVal - pos.cost;
+        if(floatPnl > 0){
+          const tpSide = pos.dir==='BUY_YES' ? 'bid' : 'ask';
+          const tpBudget = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||(1-currentYesP)));
+          const tpFill = ba.simulateFill ? ba.simulateFill(tpSide, tpBudget) : null;
+          let exitVal, exitPrice;
+          if(tpFill && tpFill.filled){
+            const exitShares = Math.min(tpFill.shares, pos.shares);
+            exitPrice = tpFill.avgPrice;
+            if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
+            else exitVal = exitShares * (1 - exitPrice);
+          } else {
+            exitPrice = ba.mid || currentYesP;
+            if(pos.dir==='BUY_YES') exitVal = pos.shares * exitPrice;
+            else exitVal = pos.shares * (1 - exitPrice);
+          }
+          const realPnl = exitVal - pos.cost;
+          if(realPnl > 0){
+            pf.cash += exitVal;
+            pf.totalPnl += realPnl;
+            pf.closedTrades.push({...pos, exitPrice, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:`time_tp_settlement_day_${localH}h`});
+            pf.positions.splice(pi,1);
+            actions.push(`⏰ 时间止盈(结算日): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 当地${localH}时 | 浮盈$${floatPnl.toFixed(2)} | 成交@${(exitPrice*100).toFixed(1)}% | PnL=$${realPnl.toFixed(2)}`);
+            continue;
+          }
+        }
+      }
+    }
+
+    // We bought because edge was positive. Now check if it reversed.
+    // For BUY_YES: we want modelP > yesPrice. Sell if yesPrice > modelP by >=20%
+    // For BUY_NO: we want modelP < yesPrice. Sell if modelP > yesPrice by >=20%  
+    const reverseEdge = -currentEdge; // how much the edge has flipped against us
+    
+    if(reverseEdge >= rules.sellEdgeReverse){
+      // SELL: edge reversed — simulate actual fill against book
+      const sellSide = pos.dir==='BUY_YES' ? 'bid' : 'ask'; // sell YES = eat bids; close NO = eat asks
+      const sellFill = ba.simulateFill ? ba.simulateFill(sellSide, pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||currentYesP))) : null;
+      
+      let exitVal, exitPrice, orderType, exitShares;
+      if(sellFill && sellFill.filled && sellFill.shares >= pos.shares * 0.5){
+        // Can fill at market — use actual fill
+        exitShares = Math.min(sellFill.shares, pos.shares);
+        exitPrice = sellFill.avgPrice;
+        if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
+        else exitVal = exitShares * (1 - exitPrice);
+        orderType = '市价';
+      } else {
+        // Thin book — use limit order at mid
+        exitPrice = ba.mid || currentYesP;
+        exitShares = pos.shares;
+        if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
+        else exitVal = exitShares * (1 - exitPrice);
+        orderType = '限价(mid)';
+      }
+      const realPnl = exitVal - pos.cost;
+      pf.cash += exitVal;
+      pf.totalPnl += realPnl;
+      pf.closedTrades.push({...pos, exitPrice, exitShares, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:`sell_edge_reversed_${Math.round(reverseEdge*100)}pct`, orderType});
+      pf.positions.splice(pi,1);
+      actions.push(`💰 卖出(${orderType}): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 模型${(modelP*100).toFixed(1)}% vs 盘口${(currentYesP*100).toFixed(1)}% | 成交${exitShares}股@${(exitPrice*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitVal.toFixed(2)} PnL=$${realPnl.toFixed(2)}`);
+      continue;
+    }
+
+    // Also check: if position is profitable and price moved significantly toward our model
+    // "sell before settlement" strategy: if we captured >60% of initial edge, take profit
+    const initialEdge = Math.abs(pos.edgeAtEntry||0);
+    const priceMove = pos.dir==='BUY_YES' ? (currentYesP - pos.entryPrice) : (pos.entryPrice - currentYesP);
+    if(initialEdge > 0 && priceMove/initialEdge > 0.6 && priceMove > 0.05){
+      // Take profit — simulate fill
+      const tpSide = pos.dir==='BUY_YES' ? 'bid' : 'ask';
+      const tpBudget = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||currentYesP));
+      const tpFill = ba.simulateFill ? ba.simulateFill(tpSide, tpBudget) : null;
+      
+      let exitVal, exitPrice;
+      if(tpFill && tpFill.filled){
+        const exitShares = Math.min(tpFill.shares, pos.shares);
+        exitPrice = tpFill.avgPrice;
+        if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
+        else exitVal = exitShares * (1 - exitPrice);
+      } else {
+        exitPrice = ba.mid || currentYesP;
+        if(pos.dir==='BUY_YES') exitVal = pos.shares * exitPrice;
+        else exitVal = pos.shares * (1 - exitPrice);
+      }
+      const realPnl=exitVal-pos.cost;
+      if(realPnl > 0){
+        pf.cash+=exitVal;
+        pf.totalPnl+=realPnl;
+        pf.closedTrades.push({...pos, exitPrice, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:'take_profit_60pct_edge_captured'});
+        pf.positions.splice(pi,1);
+        actions.push(`🎯 止盈: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 已吃到${Math.round(priceMove/initialEdge*100)}%的edge | 成交@${(exitPrice*100).toFixed(1)}% | PnL=$${realPnl.toFixed(2)}`);
+        continue;
+      }
+    }
+
+    // ─── Check for averaging down (补仓) ───
+    // 鱼身v2: only allow topup for fish-body positions (not same-day), not near settlement window
+    const isSameDayPos = pos.date === getLocalDateStr(st?.utcOffset||8);
+    const priceDropped = pos.dir==='BUY_YES' ? (currentYesP < pos.entryPrice * 0.9) : (currentYesP > pos.entryPrice * 1.1);
+    const edgeStillValid = currentEdge >= rules.minEdge;
+    const notAlreadyToppedUp = !pos.toppedUp;
+    const maxTopup = Math.min(pos.cost * 0.5, rules.maxSingleTrade - pos.cost);
+
+    if(priceDropped && edgeStillValid && notAlreadyToppedUp && !isSameDayPos && maxTopup >= 2 && pf.cash >= 2){
+      const topupBudget = Math.min(maxTopup, pf.cash * 0.1); // conservative: max 10% of cash
+      if(topupBudget >= 2){
+        const topSide = pos.dir==='BUY_YES' ? 'ask' : 'bid';
+        const topFill = ba.simulateFill ? ba.simulateFill(topSide, topupBudget) : null;
+        if(topFill && topFill.filled && topFill.shares >= 1){
+          // Execute topup
+          const oldCost = pos.cost;
+          const oldShares = pos.shares;
+          pos.shares += topFill.shares;
+          pos.cost += topFill.cost;
+          pos.cost = Math.round(pos.cost * 100) / 100;
+          pos.entryPrice = Math.round(pos.cost / pos.shares * 10000) / 10000; // new avg price
+          pos.toppedUp = true;
+          pos.topupTime = now.toISOString();
+          pos.topupFills = topFill.fills;
+          pf.cash -= topFill.cost;
+          pf.cash = Math.round(pf.cash * 100) / 100;
+
+          actions.push(`\n📥 补仓: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir}`);
+          actions.push(`   💡 逻辑: 价格下跌但edge仍有${(currentEdge*100).toFixed(1)}%(≥20%), 补仓拉低均价`);
+          actions.push(`   💵 补入$${topFill.cost} | ${topFill.shares}股 | 均价${(topFill.avgPrice*100).toFixed(2)}%`);
+          if(topFill.fills.length>1){
+            actions.push(`   📖 逐档: ${topFill.fills.map(f=>`${f.shares}股@${(f.price*100).toFixed(1)}%=$${f.cost}`).join(' → ')}`);
+          }
+          actions.push(`   📊 仓位更新: ${oldShares.toFixed(1)}→${pos.shares.toFixed(1)}股 | 均价${(oldCost/oldShares*100).toFixed(1)}%→${(pos.entryPrice*100).toFixed(1)}% | 总成本$${pos.cost}`);
+          continue; // skip normal status line
+        }
+      }
+    }
+
+    actions.push(`📊 持仓: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 入${(pos.entryPrice*100).toFixed(1)}% 现${(currentYesP*100).toFixed(1)}% 模型${(modelP*100).toFixed(1)}% | edge=${(currentEdge*100).toFixed(1)}%`);
+  }
+
+  // ─── Phase 2: Scan for new BUY opportunities ────────────
+  for(const st of STATIONS){
+    let daily,hourly;
+    try{
+      daily=await getTWCForecast(st.geocode);
+      hourly=await getTWCHourly(st.geocode);
+    }catch(e){actions.push(`⚠️ ${st.name} TWC获取失败: ${e.message}`);continue;}
+
+    const daypart=daily.daypart?.[0]||{};
+
+    // Check METAR for stop-loss context
+    let metarTmax=null;
+    try{
+      const metars=await getMETAR(st.metarId);
+      const temps=metars.map(m=>m.temp).filter(Number.isFinite);
+      if(temps.length) metarTmax=Math.max(...temps);
+    }catch{}
+
+    // Track scan stats per city
+    let cityScanned=0, citySkippedPrice=0, citySkippedEdge=0, citySkippedDepth=0, cityBought=0;
+    let cityMaxEdge=0, cityMaxEdgeLabel='';
+    const cityDaySummaries=[];
+
+    const stScanDays = getScanDaysForStation(st);
+    if(stScanDays === 0 && SCAN_MODE === 'today-only'){
+      const localHour = getLocalHour(st.utcOffset);
+      actions.push(`\n⏸️ ${st.name}: 当地${localHour}时, 不在升温时段(${st.peakStartLocal}-${st.peakEndLocal}), 跳过`);
+      continue;
+    }
+
+    // Determine which days to scan for NEW positions
+    // today-only mode: no new buys at all (only position checks above)
+    // full mode: skip day 0 (today), only scan day 1+ (tomorrow, day-after)
+    const scanStartDay = SCAN_MODE === 'today-only' ? 999 : 1; // today-only → skip all new buys
+    const scanEndDay = SCAN_MODE === 'today-only' ? 0 : 3;
+
+    if(SCAN_MODE === 'today-only'){
+      actions.push(`\n🔍 ${st.name}: 加密扫描模式, 仅监控持仓止损/止盈, 不建新仓`);
+    }
+
+    for(let i=scanStartDay;i<scanEndDay;i++){
+      const date=daily.validTimeLocal[i]?.slice(0,10);
+      const dayName=daily.dayOfWeek[i];
+      const forecastMax=daily.calendarDayTemperatureMax[i];
+      if(!date) continue;
+
+      const hTemps=[];
+      for(let h=0;h<(hourly.validTimeLocal||[]).length;h++){
+        if(hourly.validTimeLocal[h]?.startsWith(date)) hTemps.push(hourly.temperature[h]);
+      }
+      const hourlyMax=hTemps.length?Math.max(...hTemps):forecastMax;
+      let mu=forecastMax*0.7+hourlyMax*0.3;
+      const dpIdx=i*2;
+      const precip=daypart.qpf?.[dpIdx]||0;
+      const cloud=daypart.cloudCover?.[dpIdx]||0;
+      const wind=daypart.windSpeed?.[dpIdx]||0;
+      const humid=daypart.relativeHumidity?.[dpIdx]||0;
+      if(precip>5&&cloud>80) mu-=0.3;
+      if(wind>30) mu-=0.2;
+      if(humid<40&&cloud<30) mu+=0.3;
+
+      const dist=buildDist(mu,rules.sigma);
+      const eventSlug=dateSlug(date,st.name);
+      let event;
+      try{event=await getPMEvent(eventSlug);}catch{}
+      if(!event?.markets?.length) continue;
+
+      let dayScanned=0, dayMaxEdge=0, dayMaxEdgeLabel='';
+
+      for(const mkt of event.markets){
+        if(mkt.closed) continue;
+        const px=JSON.parse(mkt.outcomePrices||'[]');
+        const yesP=Number(px[0]||0);
+        cityScanned++;
+        dayScanned++;
+        if(yesP>rules.priceCap||yesP<(1-rules.priceCap)){ citySkippedPrice++; continue; }
+
+        const title=mkt.groupItemTitle||'';
+        const tempMatch=title.match(/(\d+)/);
+        if(!tempMatch) continue;
+        const k=Number(tempMatch[1]);
+        const isHigh=title.toLowerCase().includes('or higher');
+        const isLow=title.toLowerCase().includes('or below');
+        let modelP;
+        if(isHigh) modelP=Object.entries(dist).filter(([kk])=>Number(kk)>=k).reduce((s,[,v])=>s+v,0);
+        else if(isLow) modelP=Object.entries(dist).filter(([kk])=>Number(kk)<=k).reduce((s,[,v])=>s+v,0);
+        else modelP=dist[k]||0;
+
+        const edge=modelP-yesP;
+        const absEdge=Math.abs(edge);
+        const dir=edge>0?'BUY_YES':'BUY_NO';
+
+        if(absEdge>dayMaxEdge){dayMaxEdge=absEdge;dayMaxEdgeLabel=`${title}(${(edge*100).toFixed(1)}%)`;}
+        if(absEdge>cityMaxEdge){cityMaxEdge=absEdge;cityMaxEdgeLabel=`${date} ${title}(${(edge*100).toFixed(1)}%)`;}
+
+        if(absEdge<rules.minEdge){ citySkippedEdge++; continue; }
+
+        // Skip if already have position in this slug
+        if(pf.positions.some(p=>p.slug===mkt.slug)) continue;
+
+        // ─── 鱼身v2: 止损后当天禁止重入 ───
+        if(pf.stoppedToday[`${todayStr}:${mkt.slug}`]){
+          actions.push(`   ⛔ 禁止重入 ${st.name} ${date} ${title} ${dir}: 今天已止损过该标的`);
+          continue;
+        }
+
+        // ─── 鱼身v2: 赔率位置过滤 ───
+        if(dir==='BUY_YES'){
+          if(yesP < 0.12 || yesP > 0.50){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_YES: 赔率位置${(yesP*100).toFixed(0)}%不在舒适区(12-50%)`);
+            continue;
+          }
+        } else { // BUY_NO
+          if(yesP < 0.55 || yesP > 0.85){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO: 赔率位置Yes=${(yesP*100).toFixed(0)}%不在舒适区(55-85%)`);
+            continue;
+          }
+        }
+
+        // ─── 修复1: 建仓前检查METAR, 如果实测已确认则禁止建仓 ───
+        if(metarTmax != null){
+          // BUY_NO on k°C: METAR已测到k°C → 禁止(人家都量到了你还赌"不是")
+          if(dir==='BUY_NO' && metarTmax === k){
+            actions.push(`   ⛔ 禁止建仓 ${st.name} ${date} ${title} BUY_NO: METAR已测到${metarTmax}°C, 不能赌"不是${k}°C"`);
+            continue;
+          }
+          // BUY_YES on k°C: METAR已超过k+1°C → 禁止(最高温肯定不止k°C了)
+          if(dir==='BUY_YES' && metarTmax > k + 1){
+            actions.push(`   ⛔ 禁止建仓 ${st.name} ${date} ${title} BUY_YES: METAR已测到${metarTmax}°C, 最高温已超过${k}°C`);
+            continue;
+          }
+        }
+
+        // Fetch book
+        const tokenIds=JSON.parse(mkt.clobTokenIds||'[]');
+        let ba={};
+        try{const bk=await getBook(tokenIds[0]);ba=parseBook(bk);}catch{}
+
+        // Position sizing: max 15% of initial capital, max $15
+        const budgetWant=Math.min(rules.maxSingleTrade, pf.cash*rules.maxPositionPct);
+        if(budgetWant<2) continue;
+
+        // Simulate actual fill against real orderbook
+        const fillSide = dir==='BUY_YES' ? 'ask' : 'bid';
+        const fill = ba.simulateFill ? ba.simulateFill(fillSide, budgetWant) : null;
+        if(!fill || !fill.filled || fill.shares<1) {
+          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 盘口无法成交(深度不足)`);
+          continue;
+        }
+
+        // For BUY_NO via neg-risk: cost = shares * bidPrice (selling YES side)
+        // For BUY_YES: cost = shares * askPrice
+        const cost = fill.cost;
+        const shares = fill.shares;
+        const avgPrice = fill.avgPrice;
+
+        if(cost < 1) continue; // too tiny
+
+        const position={
+          slug:mkt.slug, station:st.name, date, dayName, tempLabel:title, k,
+          dir, entryPrice:avgPrice,
+          shares, cost, entryTime:now.toISOString(),
+          modelPAtEntry:Math.round(modelP*1000)/1000,
+          yesPAtEntry:yesP,
+          edgeAtEntry:Math.round(Math.abs(edge)*1000)/1000,
+          forecastMaxAtEntry:forecastMax,
+          muAtEntry:Math.round(mu*10)/10,
+          fills:fill.fills, // detailed fill record
+        };
+        pf.positions.push(position);
+        pf.cash-=cost;
+        pf.cash=Math.round(pf.cash*100)/100;
+
+        const reason=dir==='BUY_YES'
+          ?`模型${(modelP*100).toFixed(1)}%远高于盘口${(yesP*100).toFixed(1)}%`
+          :`模型${(modelP*100).toFixed(1)}%远低于盘口${(yesP*100).toFixed(1)}%`;
+
+        actions.push(`\n🛒 买入: ${st.name} ${date}(${dayName}) ${title} ${dir}`);
+        actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}%`);
+        actions.push(`   📊 天气: 风${wind}km/h 降水${precip}mm 云${cloud}% 湿度${humid}%`);
+        actions.push(`   💵 实际成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
+        if(fill.fills.length>1){
+          actions.push(`   📖 逐档吃单: ${fill.fills.map(f=>`${f.shares}股@${(f.price*100).toFixed(1)}%=$${f.cost}`).join(' → ')}`);
+        }
+        if(fill.worstPrice!==fill.fills[0]?.price){
+          actions.push(`   ⚠️ 滑点: 最优${(fill.fills[0]?.price*100).toFixed(1)}% → 最差${(fill.worstPrice*100).toFixed(1)}%`);
+        }
+        actions.push(`   📈 盘口: 买一${ba.bestBid} 卖一${ba.bestAsk} 价差${ba.spread?.toFixed(3)}`);
+        cityBought++;
+      }
+
+      // Day summary
+      cityDaySummaries.push(`${date}(${dayName}) max=${forecastMax}°C(adj${Math.round(mu*10)/10}) 扫${dayScanned}个 最大edge=${dayMaxEdge>0?(dayMaxEdgeLabel):'无'}`);
+    }
+
+    // City summary (always output, even if no buys)
+    if(cityBought===0){
+      actions.push(`\n🔍 ${st.name}: 扫描${cityScanned}个标的, 无机会 (跳过: ${citySkippedPrice}个盘口超限, ${citySkippedEdge}个edge不足)`);
+      for(const ds of cityDaySummaries) actions.push(`   ${ds}`);
+      if(cityMaxEdge>0) actions.push(`   最接近的机会: ${cityMaxEdgeLabel}`);
+    }
+  }
+
+  // ─── Save & Output ──────────────────────────────────────
+  pf.updatedAt=now.toISOString();
+  await writeFile(PORTFOLIO_PATH, JSON.stringify(pf,null,2),'utf8');
+
+  // Summary
+  const posVal=pf.positions.reduce((s,p)=>s+p.cost,0);
+  actions.push(`\n${'─'.repeat(40)}`);
+  actions.push(`💼 账户: 现金$${pf.cash.toFixed(2)} + 持仓$${posVal.toFixed(2)} = 总$${(pf.cash+posVal).toFixed(2)}`);
+  actions.push(`📈 累计PnL: $${pf.totalPnl.toFixed(2)} | 已平仓${pf.closedTrades.length}笔`);
+  if(pf.positions.length){
+    actions.push(`📦 当前持仓:`);
+    for(const p of pf.positions){
+      actions.push(`   ${p.station} ${p.date} ${p.tempLabel} ${p.dir} | $${p.cost} @ ${(p.entryPrice*100).toFixed(1)}%`);
+    }
+  }
+
+  console.log(actions.join('\n'));
+}
+
+main().catch(e=>{console.error(e);process.exit(1);});
