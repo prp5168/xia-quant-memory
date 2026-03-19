@@ -838,19 +838,22 @@ async function main(){
   pf.updatedAt=now.toISOString();
   await writeFile(PORTFOLIO_PATH, JSON.stringify(pf,null,2),'utf8');
 
-  // Summary
-  const posVal=pf.positions.reduce((s,p)=>s+p.cost,0);
-  actions.push(`\n${'─'.repeat(40)}`);
-  actions.push(`💼 账户: 现金$${pf.cash.toFixed(2)} + 持仓$${posVal.toFixed(2)} = 总$${(pf.cash+posVal).toFixed(2)}`);
-  actions.push(`📈 累计PnL: $${pf.totalPnl.toFixed(2)} | 已平仓${pf.closedTrades.length}笔`);
-  if(pf.positions.length){
-    actions.push(`📦 当前持仓:`);
-    for(const p of pf.positions){
-      actions.push(`   ${p.station} ${p.date} ${p.tempLabel} ${p.dir} | $${p.cost} @ ${(p.entryPrice*100).toFixed(1)}%`);
-    }
+  // Summary (use orderbook liquidation value)
+  let posVal = 0;
+  for(const p of pf.positions){
+    posVal += await estimateLiquidationValue(p);
   }
+  posVal = Math.round(posVal * 100) / 100;
 
-  console.log(actions.join('\n'));
+  const actionKeywords = ['🛒 买入', '🚨 止损', '💰 卖出', '🎯 止盈', '⏰ 分层止盈', '🏁 结算', '📥 补仓'];
+  const compactActionLines = actions.filter(line => actionKeywords.some(k => line.includes(k)) || line.includes('💡 逻辑:'));
+  const summaryLine = `📌 ${SCAN_MODE}｜持仓${pf.positions.length}个｜现金$${pf.cash.toFixed(2)}｜可平总资产$${(pf.cash+posVal).toFixed(2)}｜已平仓${pf.closedTrades.length}笔｜累计PnL $${pf.totalPnl.toFixed(2)}`;
+
+  if(compactActionLines.length === 0){
+    console.log(`无动作｜${summaryLine}`);
+  } else {
+    console.log([summaryLine, ...compactActionLines].join('\n'));
+  }
 }
 
 main().catch(e=>{console.error(e);process.exit(1);});
