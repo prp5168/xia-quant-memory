@@ -169,17 +169,44 @@ async function estimateLiquidationValue(pos){
     const m=mkt[0];
     if(!m) return pos.cost;
     const tokenIds=JSON.parse(m.clobTokenIds||'[]');
-    const bk=await getBook(tokenIds[0]);
-    const ba=parseBook(bk);
     if(pos.dir==='BUY_YES'){
+      const bk=await getBook(tokenIds[0]);
+      const ba=parseBook(bk);
       const px=ba.bestBid ?? ba.mid ?? 0;
       return Math.round(pos.shares * px * 100)/100;
     }
-    const px=ba.bestAsk ?? ba.mid ?? 1;
-    return Math.round(pos.shares * (1-px) * 100)/100;
+    const bkNo=await getBook(tokenIds[1]);
+    const baNo=parseBook(bkNo);
+    const px=baNo.bestBid ?? baNo.mid ?? 0;
+    return Math.round(pos.shares * px * 100)/100;
   }catch{
     return Math.round((Number(pos.cost)||0)*100)/100;
   }
+}
+
+function getCorrectedClosedTradePnl(trade){
+  const oldPnl = Number(trade.pnl || 0);
+  if(trade.dir !== 'BUY_NO') return Math.round(oldPnl * 100) / 100;
+  const entryYes = Number(trade.entryPrice || 0);
+  const exitYes = Number(trade.exitPrice || 0);
+  const cost = Number(trade.cost || 0);
+  if(!(entryYes >= 0 && entryYes < 1) || !(exitYes >= 0 && exitYes <= 1) || cost < 0) return Math.round(oldPnl * 100) / 100;
+  const noEntry = 1 - entryYes;
+  const noExit = 1 - exitYes;
+  if(noEntry <= 0) return Math.round(oldPnl * 100) / 100;
+  const correctedShares = cost / noEntry;
+  const correctedExitVal = correctedShares * noExit;
+  return Math.round((correctedExitVal - cost) * 100) / 100;
+}
+
+function getCorrectedSummaryAccounting(pf){
+  const correctedClosedPnl = pf.closedTrades.reduce((sum, t) => sum + getCorrectedClosedTradePnl(t), 0);
+  const openCost = pf.positions.reduce((sum, p) => sum + Number(p.cost || 0), 0);
+  const correctedCash = pf.initialCapital + correctedClosedPnl - openCost;
+  return {
+    correctedClosedPnl: Math.round(correctedClosedPnl * 100) / 100,
+    correctedCash: Math.round(correctedCash * 100) / 100,
+  };
 }
 
 // ─── Main ──────────────────────────────────────────────────
@@ -206,13 +233,14 @@ async function main(){
   for(let pi=pf.positions.length-1;pi>=0;pi--){
     const pos=pf.positions[pi];
     // Get current market price
-    let currentYesP=null, book=null, ba={};
+    let currentYesP=null, currentNoP=null, book=null, bookNo=null, ba={}, baNo={};
     try{
       const mkt=await fetchJSON(`https://gamma-api.polymarket.com/markets?slug=${encodeURIComponent(pos.slug)}`);
       const m=mkt[0];
       if(m){
         const px=JSON.parse(m.outcomePrices||'[]');
         currentYesP=Number(px[0]||0);
+        currentNoP=Number(px[1]|| (1-currentYesP) || 0);
         if(m.closed){
           // Market closed/resolved
           const resolved=currentYesP>0.95?1:(currentYesP<0.05?0:currentYesP);
@@ -221,7 +249,7 @@ async function main(){
           // Simplified: 
           let exitVal;
           if(pos.dir==='BUY_YES') exitVal=resolved*pos.shares;
-          else exitVal=(1-resolved)*pos.shares;
+          else exitVal=((1-resolved))*pos.shares;
           const cost=pos.cost;
           const realPnl=exitVal-cost;
           pf.cash+=exitVal;
@@ -233,6 +261,7 @@ async function main(){
         }
         const tokenIds=JSON.parse(m.clobTokenIds||'[]');
         try{book=await getBook(tokenIds[0]);ba=parseBook(book);}catch{}
+        try{if(tokenIds[1]){bookNo=await getBook(tokenIds[1]);baNo=parseBook(bookNo);}}catch{}
       }
     }catch{}
 
@@ -269,16 +298,17 @@ async function main(){
         const forecastShift=Math.abs(fMax-(pos.forecastMaxAtEntry||fMax));
         if(forecastShift>=2){
           // STOP LOSS: forecast shifted by >=2C — MUST use market order (eat whatever is on book)
-          const slSide = pos.dir==='BUY_YES' ? 'bid' : 'ask';
-          const slBudget = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (ba.bestAsk||currentYesP||0.99));
-          const slFill = ba.simulateFill ? ba.simulateFill(slSide, slBudget) : null;
+          const slBook = pos.dir==='BUY_YES' ? ba : baNo;
+          const slSide = 'bid';
+          const slBudget = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (baNo.bestBid||currentNoP||0.01));
+          const slFill = slBook.simulateFill ? slBook.simulateFill(slSide, slBudget) : null;
           
           let exitVal, exitPrice;
           if(slFill && slFill.filled){
             const exitShares = Math.min(slFill.shares, pos.shares);
             exitPrice = slFill.avgPrice;
             if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
-            else exitVal = exitShares * (1 - exitPrice);
+            else exitVal = exitShares * exitPrice;
           } else {
             // No liquidity at all — worst case assume 0 recovery
             exitPrice = 0;
@@ -297,9 +327,10 @@ async function main(){
         // ─── 硬止损 B: 盘口极端化 (BUY_NO but Yes>90%, or BUY_YES but Yes<10%) ───
         const extremeStop = (pos.dir==='BUY_NO' && currentYesP > 0.90) || (pos.dir==='BUY_YES' && currentYesP < 0.10);
         if(extremeStop){
-          const slSide2 = pos.dir==='BUY_YES' ? 'bid' : 'ask';
-          const slBudget2 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (ba.bestAsk||currentYesP||0.99));
-          const slFill2 = ba.simulateFill ? ba.simulateFill(slSide2, slBudget2) : null;
+          const slBook2 = pos.dir==='BUY_YES' ? ba : baNo;
+          const slSide2 = 'bid';
+          const slBudget2 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (baNo.bestBid||currentNoP||0.01));
+          const slFill2 = slBook2.simulateFill ? slBook2.simulateFill(slSide2, slBudget2) : null;
           let exitVal2, exitPrice2;
           if(slFill2 && slFill2.filled){
             exitPrice2 = slFill2.avgPrice;
@@ -328,9 +359,10 @@ async function main(){
             // BUY_YES on k°C: if METAR already exceeded k (max > k), then k won't be the final max (maybe higher)
             const metarContradict = (pos.dir==='BUY_NO' && metarMax === pos.k) || (pos.dir==='BUY_YES' && metarMax > pos.k + 1);
             if(metarContradict){
-              const slSide3 = pos.dir==='BUY_YES' ? 'bid' : 'ask';
-              const slBudget3 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (ba.bestAsk||currentYesP||0.99));
-              const slFill3 = ba.simulateFill ? ba.simulateFill(slSide3, slBudget3) : null;
+              const slBook3 = pos.dir==='BUY_YES' ? ba : baNo;
+              const slSide3 = 'bid';
+              const slBudget3 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (baNo.bestBid||currentNoP||0.01));
+              const slFill3 = slBook3.simulateFill ? slBook3.simulateFill(slSide3, slBudget3) : null;
               let exitVal3, exitPrice3;
               if(slFill3 && slFill3.filled){
                 exitPrice3 = slFill3.avgPrice;
@@ -357,9 +389,10 @@ async function main(){
           else currentVal = pos.shares * (1 - currentYesP);
           const drawdown = (pos.cost - currentVal) / pos.cost;
           if(drawdown >= 0.5){
-            const slSide4 = pos.dir==='BUY_YES' ? 'bid' : 'ask';
-            const slBudget4 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (ba.bestAsk||currentYesP||0.99));
-            const slFill4 = ba.simulateFill ? ba.simulateFill(slSide4, slBudget4) : null;
+            const slBook4 = pos.dir==='BUY_YES' ? ba : baNo;
+            const slSide4 = 'bid';
+            const slBudget4 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (baNo.bestBid||currentNoP||0.01));
+            const slFill4 = slBook4.simulateFill ? slBook4.simulateFill(slSide4, slBudget4) : null;
             let exitVal4, exitPrice4;
             if(slFill4 && slFill4.filled){
               exitPrice4 = slFill4.avgPrice;
@@ -383,12 +416,13 @@ async function main(){
     if(modelP==null) continue;
 
     // Check sell condition
-    const currentEdge = pos.dir==='BUY_YES' ? (modelP - currentYesP) : (currentYesP - modelP);
+    const currentEdge = pos.dir==='BUY_YES' ? (modelP - currentYesP) : ((1 - modelP) - currentNoP);
 
     // ─── 第二轮优化: 模型翻转止损（模型已明显站到对面） ───
     if(currentEdge < -0.10){
-      const sellSide0 = pos.dir==='BUY_YES' ? 'bid' : 'ask';
-      const sellFill0 = ba.simulateFill ? ba.simulateFill(sellSide0, pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||currentYesP))) : null;
+      const sellBook0 = pos.dir==='BUY_YES' ? ba : baNo;
+      const sellSide0 = 'bid';
+      const sellFill0 = sellBook0.simulateFill ? sellBook0.simulateFill(sellSide0, pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (baNo.bestBid||currentNoP))) : null;
       let exitVal0, exitPrice0;
       if(sellFill0 && sellFill0.filled){
         const exitShares0 = Math.min(sellFill0.shares, pos.shares);
@@ -449,20 +483,21 @@ async function main(){
         const floatPnl = currentVal - pos.cost;
         if(floatPnl > 0){
           const targetShares = Math.max(1, pos.shares * 0.5);
-          const tpSide = pos.dir==='BUY_YES' ? 'bid' : 'ask';
-          const tpBudget = targetShares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||(1-currentYesP)));
-          const tpFill = ba.simulateFill ? ba.simulateFill(tpSide, tpBudget) : null;
+          const tpBook2 = pos.dir==='BUY_YES' ? ba : baNo;
+      const tpSide = 'bid';
+          const tpBudget = targetShares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (baNo.bestBid||currentNoP));
+          const tpFill = tpBook2.simulateFill ? tpBook2.simulateFill(tpSide, tpBudget) : null;
           let exitVal, exitPrice, exitShares;
           if(tpFill && tpFill.filled){
             exitShares = Math.min(tpFill.shares, targetShares, pos.shares);
             exitPrice = tpFill.avgPrice;
             if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
-            else exitVal = exitShares * (1 - exitPrice);
+            else exitVal = exitShares * exitPrice;
           } else {
             exitShares = Math.min(targetShares, pos.shares);
             exitPrice = ba.mid || currentYesP;
             if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
-            else exitVal = exitShares * (1 - exitPrice);
+            else exitVal = exitShares * exitPrice;
           }
           const costPortion = pos.cost * (exitShares / pos.shares);
           const realPnl = exitVal - costPortion;
@@ -490,8 +525,9 @@ async function main(){
     
     if(reverseEdge >= rules.sellEdgeReverse){
       // SELL: edge reversed — simulate actual fill against book
-      const sellSide = pos.dir==='BUY_YES' ? 'bid' : 'ask'; // sell YES = eat bids; close NO = eat asks
-      const sellFill = ba.simulateFill ? ba.simulateFill(sellSide, pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||currentYesP))) : null;
+      const sellBook = pos.dir==='BUY_YES' ? ba : baNo;
+      const sellSide = 'bid'; // sell token into bids
+      const sellFill = sellBook.simulateFill ? sellBook.simulateFill(sellSide, pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (baNo.bestBid||currentNoP))) : null;
       
       let exitVal, exitPrice, orderType, exitShares;
       if(sellFill && sellFill.filled && sellFill.shares >= pos.shares * 0.5){
@@ -499,14 +535,14 @@ async function main(){
         exitShares = Math.min(sellFill.shares, pos.shares);
         exitPrice = sellFill.avgPrice;
         if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
-        else exitVal = exitShares * (1 - exitPrice);
+        else exitVal = exitShares * exitPrice;
         orderType = '市价';
       } else {
         // Thin book — use limit order at mid
         exitPrice = ba.mid || currentYesP;
         exitShares = pos.shares;
         if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
-        else exitVal = exitShares * (1 - exitPrice);
+        else exitVal = exitShares * exitPrice;
         orderType = '限价(mid)';
       }
       const realPnl = exitVal - pos.cost;
@@ -528,9 +564,10 @@ async function main(){
     else currentValForTp = pos.shares * (1 - currentYesP);
     const floatingPnlForTp = currentValForTp - pos.cost;
     if(initialEdge > 0 && currentEdge > 0 && currentEdge <= initialEdge * 0.4 && floatingPnlForTp > 0){
-      const tpSide0 = pos.dir==='BUY_YES' ? 'bid' : 'ask';
-      const tpBudget0 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||currentYesP));
-      const tpFill0 = ba.simulateFill ? ba.simulateFill(tpSide0, tpBudget0) : null;
+      const tpBook0 = pos.dir==='BUY_YES' ? ba : baNo;
+      const tpSide0 = 'bid';
+      const tpBudget0 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (baNo.bestBid||currentNoP));
+      const tpFill0 = tpBook0.simulateFill ? tpBook0.simulateFill(tpSide0, tpBudget0) : null;
       let exitVal0, exitPrice0;
       if(tpFill0 && tpFill0.filled){
         const exitShares0 = Math.min(tpFill0.shares, pos.shares);
@@ -556,16 +593,17 @@ async function main(){
     // "sell before settlement" strategy: if we captured >60% of initial edge, take profit
     if(initialEdge > 0 && priceMove/initialEdge > 0.6 && priceMove > 0.05){
       // Take profit — simulate fill
-      const tpSide = pos.dir==='BUY_YES' ? 'bid' : 'ask';
-      const tpBudget = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||currentYesP));
-      const tpFill = ba.simulateFill ? ba.simulateFill(tpSide, tpBudget) : null;
+      const tpBook2 = pos.dir==='BUY_YES' ? ba : baNo;
+      const tpSide = 'bid';
+      const tpBudget = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (baNo.bestBid||currentNoP));
+      const tpFill = tpBook2.simulateFill ? tpBook2.simulateFill(tpSide, tpBudget) : null;
       
       let exitVal, exitPrice;
       if(tpFill && tpFill.filled){
         const exitShares = Math.min(tpFill.shares, pos.shares);
         exitPrice = tpFill.avgPrice;
         if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
-        else exitVal = exitShares * (1 - exitPrice);
+        else exitVal = exitShares * exitPrice;
       } else {
         exitPrice = ba.mid || currentYesP;
         if(pos.dir==='BUY_YES') exitVal = pos.shares * exitPrice;
@@ -595,8 +633,9 @@ async function main(){
     if(priceDropped && edgeStillValid && notAlreadyToppedUp && !isSameDayPos && modelNotWorse && hoursToSettlement >= 24 && maxTopup >= 2 && pf.cash >= 2){
       const topupBudget = Math.min(maxTopup, pf.cash * 0.1); // conservative: max 10% of cash
       if(topupBudget >= 2){
-        const topSide = pos.dir==='BUY_YES' ? 'ask' : 'bid';
-        const topFill = ba.simulateFill ? ba.simulateFill(topSide, topupBudget) : null;
+        const topBook = pos.dir==='BUY_YES' ? ba : baNo;
+        const topSide = 'ask';
+        const topFill = topBook.simulateFill ? topBook.simulateFill(topSide, topupBudget) : null;
         if(topFill && topFill.filled && topFill.shares >= 1){
           // Execute topup
           const oldCost = pos.cost;
@@ -733,9 +772,12 @@ async function main(){
         else if(isLow) modelP=Object.entries(dist).filter(([kk])=>Number(kk)<=k).reduce((s,[,v])=>s+v,0);
         else modelP=dist[k]||0;
 
-        const edge=modelP-yesP;
+        const noP = Number(px[1] || (1-yesP) || 0);
+        const edgeYes = modelP - yesP;
+        const edgeNo = (1 - modelP) - noP;
+        const dir = edgeYes > edgeNo ? 'BUY_YES' : 'BUY_NO';
+        const edge = dir==='BUY_YES' ? edgeYes : edgeNo;
         const absEdge=Math.abs(edge);
-        const dir=edge>0?'BUY_YES':'BUY_NO';
 
         if(absEdge>dayMaxEdge){dayMaxEdge=absEdge;dayMaxEdgeLabel=`${title}(${(edge*100).toFixed(1)}%)`;}
         if(absEdge>cityMaxEdge){cityMaxEdge=absEdge;cityMaxEdgeLabel=`${date} ${title}(${(edge*100).toFixed(1)}%)`;}
@@ -801,8 +843,9 @@ async function main(){
 
         // Fetch book
         const tokenIds=JSON.parse(mkt.clobTokenIds||'[]');
-        let ba={};
+        let ba={}, baNo={};
         try{const bk=await getBook(tokenIds[0]);ba=parseBook(bk);}catch{}
+        try{if(tokenIds[1]){const bkNo=await getBook(tokenIds[1]);baNo=parseBook(bkNo);}}catch{}
 
         // Position sizing: max 15% of initial capital, max $15
         const cityRemaining = Math.max(0, cityExposureLimit - cityExposure);
@@ -810,15 +853,15 @@ async function main(){
         if(budgetWant<2) continue;
 
         // Simulate actual fill against real orderbook
-        const fillSide = dir==='BUY_YES' ? 'ask' : 'bid';
-        const fill = ba.simulateFill ? ba.simulateFill(fillSide, budgetWant) : null;
+        const entryBook = dir==='BUY_YES' ? ba : baNo;
+        const fillSide = 'ask';
+        const fill = entryBook.simulateFill ? entryBook.simulateFill(fillSide, budgetWant) : null;
         if(!fill || !fill.filled || fill.shares<1) {
           actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 盘口无法成交(深度不足)`);
           continue;
         }
 
-        // For BUY_NO via neg-risk: cost = shares * bidPrice (selling YES side)
-        // For BUY_YES: cost = shares * askPrice
+        // BUY_YES uses YES ask book; BUY_NO uses NO ask book directly from PM
         const cost = fill.cost;
         const shares = fill.shares;
         const avgPrice = fill.avgPrice;
@@ -831,6 +874,7 @@ async function main(){
           shares, cost, entryTime:now.toISOString(),
           modelPAtEntry:Math.round(modelP*1000)/1000,
           yesPAtEntry:yesP,
+          noPAtEntry:noP,
           edgeAtEntry:Math.round(Math.abs(edge)*1000)/1000,
           forecastMaxAtEntry:forecastMax,
           muAtEntry:Math.round(mu*10)/10,
@@ -880,10 +924,11 @@ async function main(){
     posVal += await estimateLiquidationValue(p);
   }
   posVal = Math.round(posVal * 100) / 100;
+  const { correctedClosedPnl, correctedCash } = getCorrectedSummaryAccounting(pf);
 
   const actionKeywords = ['🛒 买入', '🚨 止损', '💰 卖出', '🎯 止盈', '⏰ 分层止盈', '🏁 结算', '📥 补仓'];
   const compactActionLines = actions.filter(line => actionKeywords.some(k => line.includes(k)) || line.includes('💡 逻辑:'));
-  const summaryLine = `📌 ${SCAN_MODE}｜持仓${pf.positions.length}个｜现金$${pf.cash.toFixed(2)}｜可平总资产$${(pf.cash+posVal).toFixed(2)}｜已平仓${pf.closedTrades.length}笔｜累计PnL $${pf.totalPnl.toFixed(2)}`;
+  const summaryLine = `📌 ${SCAN_MODE}｜持仓${pf.positions.length}个｜现金$${correctedCash.toFixed(2)}｜可平总资产$${(correctedCash+posVal).toFixed(2)}｜已平仓${pf.closedTrades.length}笔｜累计PnL $${correctedClosedPnl.toFixed(2)}`;
 
   if(compactActionLines.length === 0){
     console.log(`无动作｜${summaryLine}`);
