@@ -1,6 +1,6 @@
 {
   "initialCapital": 400,
-  "cash": 551.72,
+  "cash": 241,
   "positions": [
     {
       "slug": "highest-temperature-in-toronto-on-march-20-2026-6c",
@@ -1488,9 +1488,9 @@
       "reason": "take_profit_edge_decay_40pct"
     }
   ],
-  "totalPnl": 251.34,
+  "totalPnl": -59.38,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-19T14:05:05.658Z",
+  "updatedAt": "2026-03-19T14:29:08.599Z",
   "rules": {
     "maxPositionPct": 0.15,
     "maxSingleTrade": 20,
