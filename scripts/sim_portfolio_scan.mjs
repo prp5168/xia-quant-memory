@@ -301,6 +301,8 @@ async function main(){
     if(!st) continue;
 
     let modelP=null;
+    let currentDist=null;
+    let adjacentStopNote='';
     try{
       const daily=await getTWCForecast(st.geocode);
       const hourly=await getTWCHourly(st.geocode);
@@ -321,6 +323,7 @@ async function main(){
         if((dp.relativeHumidity?.[dpi]||0)<40&&(dp.cloudCover?.[dpi]||0)<30) mu+=0.3;
         const sigma = getSigmaForDate(pos.date, st, rules.sigma);
         const dist=buildDist(mu,sigma);
+        currentDist=dist;
         modelP=dist[pos.k]||0;
 
         // Check for forecast shift (stop-loss trigger)
@@ -470,6 +473,56 @@ async function main(){
       pf.positions.splice(pi,1);
       actions.push(`🚨 止损(模型翻转): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 当前edge=${(currentEdge*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitVal0.toFixed(2)} PnL=$${realPnl0.toFixed(2)}`);
       continue;
+    }
+
+    // ─── 鱼身v4: 相邻档替代止损（精确温度 BUY_YES 专用） ───
+    if(pos.dir==='BUY_YES' && isExactTempTitle(pos.tempLabel) && currentDist){
+      try{
+        const eventSlug = dateSlug(pos.date, st.name);
+        const event = await getPMEvent(eventSlug);
+        const exactMarkets = (event?.markets||[]).filter(m=>!m.closed && isExactTempTitle(m.groupItemTitle||''));
+        let bestNeighbor = null;
+        for(const em of exactMarkets){
+          const tm = (em.groupItemTitle||'').match(/(\d+)/);
+          if(!tm) continue;
+          const kk = Number(tm[1]);
+          if(Math.abs(kk - pos.k) !== 1) continue;
+          const px = JSON.parse(em.outcomePrices||'[]');
+          const yes = Number(px[0]||0);
+          const edgeNeighbor = (currentDist[kk]||0) - yes;
+          if(!bestNeighbor || edgeNeighbor > bestNeighbor.edge){
+            bestNeighbor = { k: kk, title: em.groupItemTitle||'', yes, model: currentDist[kk]||0, edge: edgeNeighbor };
+          }
+        }
+        if(bestNeighbor && currentEdge < 0.10 && bestNeighbor.edge >= currentEdge + 0.10){
+          pos.adjacentLossCount = (pos.adjacentLossCount || 0) + 1;
+          adjacentStopNote = `${bestNeighbor.title} edge=${(bestNeighbor.edge*100).toFixed(1)}% 明显强于当前档${(currentEdge*100).toFixed(1)}%`;
+        } else {
+          pos.adjacentLossCount = 0;
+        }
+        if((pos.adjacentLossCount || 0) >= 2){
+          const sellBookA = ba;
+          const sellSideA = 'bid';
+          const sellFillA = sellBookA.simulateFill ? sellBookA.simulateFill(sellSideA, pos.shares * (ba.bestBid||currentYesP||0.01)) : null;
+          let exitValA, exitPriceA;
+          if(sellFillA && sellFillA.filled){
+            const exitSharesA = Math.min(sellFillA.shares, pos.shares);
+            exitPriceA = sellFillA.avgPrice;
+            exitValA = exitSharesA * exitPriceA;
+          } else {
+            exitPriceA = ba.mid || currentYesP;
+            exitValA = pos.shares * exitPriceA;
+          }
+          const realPnlA = exitValA - pos.cost;
+          pf.cash += exitValA;
+          pf.totalPnl += realPnlA;
+          pf.closedTrades.push({...pos, exitPrice:exitPriceA, exitTime:now.toISOString(), pnl:Math.round(realPnlA*100)/100, reason:'stop_loss_adjacent_replacement_2x'});
+          pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+          pf.positions.splice(pi,1);
+          actions.push(`🚨 止损(相邻档替代): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | ${adjacentStopNote} | 成本$${pos.cost.toFixed(2)} 回收$${exitValA.toFixed(2)} PnL=$${realPnlA.toFixed(2)}`);
+          continue;
+        }
+      }catch{}
     }
 
     // ─── 优化: edge 连续两轮为负 或 单轮低于 -8% 时更快退出 ───
