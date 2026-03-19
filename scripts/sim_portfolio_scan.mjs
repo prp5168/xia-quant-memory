@@ -862,13 +862,13 @@ async function main(){
 
         // ─── 鱼身v2: 赔率位置过滤 ───
         if(dir==='BUY_YES'){
-          if(yesP < 0.12 || yesP > 0.40){
-            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_YES: 赔率位置${(yesP*100).toFixed(0)}%不在舒适区(12-40%)`);
+          if(yesP < 0.10 || yesP > 0.40){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_YES: 赔率位置${(yesP*100).toFixed(0)}%不在舒适区(10-40%)`);
             continue;
           }
         } else { // BUY_NO
-          if(noP < 0.12 || noP > 0.40){
-            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO: 赔率位置NO=${(noP*100).toFixed(0)}%不在舒适区(12-40%)`);
+          if(noP < 0.10 || noP > 0.40){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO: 赔率位置NO=${(noP*100).toFixed(0)}%不在舒适区(10-40%)`);
             continue;
           }
         }
