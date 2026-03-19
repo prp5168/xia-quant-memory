@@ -11,7 +11,7 @@
 - 加密扫描（30分钟）：只盯已有仓位止损/止盈，不开新仓
 - 城市：上海（ZSPD）、达拉斯（KDFW）、伦敦（EGLL）、首尔（RKSI）、惠灵顿（NZWN）、米兰（LIMC）
 - 数据源：TWC API（WU 同源）+ Polymarket Gamma/CLOB + NOAA METAR
-- σ = 0.8
+- sigma 按时间分层：当天 0.8，明天 1.0，后天及更远 1.5
 
 ## 建仓规则
 ### 1）先定中心档
