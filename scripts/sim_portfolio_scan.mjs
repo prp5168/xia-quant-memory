@@ -409,6 +409,35 @@ async function main(){
       continue;
     }
 
+    // ─── 优化: edge 连续两轮为负 或 单轮低于 -8% 时更快退出 ───
+    if(currentEdge < 0){
+      pos.negativeEdgeCount = (pos.negativeEdgeCount || 0) + 1;
+    } else {
+      pos.negativeEdgeCount = 0;
+    }
+    if(currentEdge < -0.08 || (pos.negativeEdgeCount || 0) >= 2){
+      const sellSideN = pos.dir==='BUY_YES' ? 'bid' : 'ask';
+      const sellFillN = ba.simulateFill ? ba.simulateFill(sellSideN, pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||currentYesP))) : null;
+      let exitValN, exitPriceN;
+      if(sellFillN && sellFillN.filled){
+        const exitSharesN = Math.min(sellFillN.shares, pos.shares);
+        exitPriceN = sellFillN.avgPrice;
+        if(pos.dir==='BUY_YES') exitValN = exitSharesN * exitPriceN;
+        else exitValN = exitSharesN * (1 - exitPriceN);
+      } else {
+        exitPriceN = ba.mid || currentYesP;
+        if(pos.dir==='BUY_YES') exitValN = pos.shares * exitPriceN;
+        else exitValN = pos.shares * (1 - exitPriceN);
+      }
+      const realPnlN = exitValN - pos.cost;
+      pf.cash += exitValN;
+      pf.totalPnl += realPnlN;
+      pf.closedTrades.push({...pos, exitPrice:exitPriceN, exitTime:now.toISOString(), pnl:Math.round(realPnlN*100)/100, reason:`stop_loss_negative_edge_${Math.round((-currentEdge)*100)}pct_${pos.negativeEdgeCount||1}x`});
+      pf.positions.splice(pi,1);
+      actions.push(`🚨 止损(edge转负): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 当前edge=${(currentEdge*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitValN.toFixed(2)} PnL=$${realPnlN.toFixed(2)}`);
+      continue;
+    }
+
     // ─── 鱼身v3: 结算日早晨分层止盈 ───
     // First trigger on settlement morning sells ~50%, then later rules can handle the rest
     if(pos.date === getLocalDateStr(st?.utcOffset||8)){
@@ -715,6 +744,13 @@ async function main(){
 
         // Skip if already have position in this slug
         if(pf.positions.some(p=>p.slug===mkt.slug)) continue;
+
+        // 优化: 同城市+同日期最多2笔，避免相关性过高
+        const sameCityDateCount = pf.positions.filter(p=>p.station===st.name && p.date===date).length;
+        if(sameCityDateCount >= 2){
+          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 同城同日持仓已达2笔上限`);
+          continue;
+        }
 
         // ─── 鱼身v2: 止损后当天禁止重入 ───
         if(pf.stoppedToday[`${todayStr}:${mkt.slug}`]){

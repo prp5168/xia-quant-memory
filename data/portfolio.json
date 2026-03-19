@@ -1,46 +1,7 @@
 {
   "initialCapital": 400,
-  "cash": 343.21,
+  "cash": 367.61,
   "positions": [
-    {
-      "slug": "highest-temperature-in-seoul-on-march-19-2026-9c",
-      "station": "Seoul",
-      "date": "2026-03-19",
-      "dayName": "Thursday",
-      "tempLabel": "9°C",
-      "k": 9,
-      "dir": "BUY_NO",
-      "entryPrice": 0.2679,
-      "shares": 56,
-      "cost": 15,
-      "entryTime": "2026-03-18T04:35:43.185Z",
-      "modelPAtEntry": 0.03,
-      "yesPAtEntry": 0.27,
-      "edgeAtEntry": 0.24,
-      "forecastMaxAtEntry": 7,
-      "muAtEntry": 7,
-      "fills": [
-        {
-          "price": 0.26,
-          "shares": 41,
-          "cost": 10.66
-        }
-      ],
-      "toppedUp": true,
-      "topupTime": "2026-03-18T07:28:34.692Z",
-      "topupFills": [
-        {
-          "price": 0.29,
-          "shares": 14,
-          "cost": 4.06
-        },
-        {
-          "price": 0.28,
-          "shares": 1,
-          "cost": 0.28
-        }
-      ]
-    },
     {
       "slug": "highest-temperature-in-seoul-on-march-20-2026-11c",
       "station": "Seoul",
@@ -88,7 +49,8 @@
           "shares": 21,
           "cost": 4.62
         }
-      ]
+      ],
+      "negativeEdgeCount": 0
     },
     {
       "slug": "highest-temperature-in-seoul-on-march-20-2026-9c",
@@ -147,7 +109,8 @@
           "shares": 17,
           "cost": 3.4
         }
-      ]
+      ],
+      "negativeEdgeCount": 0
     },
     {
       "slug": "highest-temperature-in-seoul-on-march-20-2026-12c",
@@ -197,81 +160,8 @@
           "shares": 151,
           "cost": 4.53
         }
-      ]
-    },
-    {
-      "slug": "highest-temperature-in-seoul-on-march-19-2026-10c",
-      "station": "Seoul",
-      "date": "2026-03-19",
-      "dayName": "Thursday",
-      "tempLabel": "10°C",
-      "k": 10,
-      "dir": "BUY_NO",
-      "entryPrice": 0.186,
-      "shares": 80.1,
-      "cost": 14.9,
-      "entryTime": "2026-03-18T10:28:33.177Z",
-      "modelPAtEntry": 0,
-      "yesPAtEntry": 0.21,
-      "edgeAtEntry": 0.21,
-      "forecastMaxAtEntry": 7,
-      "muAtEntry": 7,
-      "fills": [
-        {
-          "price": 0.19,
-          "shares": 34.8,
-          "cost": 6.61
-        },
-        {
-          "price": 0.18,
-          "shares": 22.3,
-          "cost": 4.01
-        },
-        {
-          "price": 0.16,
-          "shares": 5,
-          "cost": 0.8
-        }
       ],
-      "toppedUp": true,
-      "topupTime": "2026-03-18T10:37:38.019Z",
-      "topupFills": [
-        {
-          "price": 0.2,
-          "shares": 5,
-          "cost": 1
-        },
-        {
-          "price": 0.19,
-          "shares": 13,
-          "cost": 2.47
-        }
-      ]
-    },
-    {
-      "slug": "highest-temperature-in-shanghai-on-march-19-2026-12c",
-      "station": "Shanghai",
-      "date": "2026-03-19",
-      "dayName": "Thursday",
-      "tempLabel": "12°C",
-      "k": 12,
-      "dir": "BUY_NO",
-      "entryPrice": 0.69,
-      "shares": 14,
-      "cost": 9.66,
-      "entryTime": "2026-03-18T13:28:33.325Z",
-      "modelPAtEntry": 0.44,
-      "yesPAtEntry": 0.69,
-      "edgeAtEntry": 0.25,
-      "forecastMaxAtEntry": 12,
-      "muAtEntry": 11.7,
-      "fills": [
-        {
-          "price": 0.69,
-          "shares": 14,
-          "cost": 9.66
-        }
-      ]
+      "negativeEdgeCount": 0
     },
     {
       "slug": "highest-temperature-in-milan-on-march-19-2026-18corhigher",
@@ -300,6 +190,99 @@
           "price": 0.41,
           "shares": 10,
           "cost": 4.1
+        }
+      ],
+      "negativeEdgeCount": 0
+    },
+    {
+      "slug": "highest-temperature-in-seoul-on-march-21-2026-9c",
+      "station": "Seoul",
+      "date": "2026-03-21",
+      "dayName": "Saturday",
+      "tempLabel": "9°C",
+      "k": 9,
+      "dir": "BUY_YES",
+      "entryPrice": 0.2089,
+      "shares": 95.5,
+      "cost": 19.95,
+      "entryTime": "2026-03-18T18:28:33.943Z",
+      "modelPAtEntry": 0.44,
+      "yesPAtEntry": 0.17,
+      "edgeAtEntry": 0.27,
+      "forecastMaxAtEntry": 9,
+      "muAtEntry": 8.7,
+      "fills": [
+        {
+          "price": 0.2,
+          "shares": 10.5,
+          "cost": 2.1
+        },
+        {
+          "price": 0.21,
+          "shares": 85,
+          "cost": 17.85
+        }
+      ],
+      "negativeEdgeCount": 0
+    },
+    {
+      "slug": "highest-temperature-in-shanghai-on-march-21-2026-14c",
+      "station": "Shanghai",
+      "date": "2026-03-21",
+      "dayName": "Saturday",
+      "tempLabel": "14°C",
+      "k": 14,
+      "dir": "BUY_YES",
+      "entryPrice": 0.2969,
+      "shares": 66.98,
+      "cost": 19.88,
+      "entryTime": "2026-03-18T19:28:33.196Z",
+      "modelPAtEntry": 0.469,
+      "yesPAtEntry": 0.265,
+      "edgeAtEntry": 0.204,
+      "forecastMaxAtEntry": 14,
+      "muAtEntry": 14,
+      "fills": [
+        {
+          "price": 0.27,
+          "shares": 6.98,
+          "cost": 1.88
+        },
+        {
+          "price": 0.3,
+          "shares": 60,
+          "cost": 18
+        }
+      ],
+      "negativeEdgeCount": 0
+    },
+    {
+      "slug": "highest-temperature-in-london-on-march-20-2026-14c",
+      "station": "London",
+      "date": "2026-03-20",
+      "dayName": "Friday",
+      "tempLabel": "14°C",
+      "k": 14,
+      "dir": "BUY_YES",
+      "entryPrice": 0.304,
+      "shares": 65,
+      "cost": 19.76,
+      "entryTime": "2026-03-19T01:41:50.589Z",
+      "modelPAtEntry": 0.469,
+      "yesPAtEntry": 0.24,
+      "edgeAtEntry": 0.229,
+      "forecastMaxAtEntry": 14,
+      "muAtEntry": 14,
+      "fills": [
+        {
+          "price": 0.3,
+          "shares": 39,
+          "cost": 11.7
+        },
+        {
+          "price": 0.31,
+          "shares": 26,
+          "cost": 8.06
         }
       ]
     }
@@ -498,11 +481,222 @@
       "pnl": -6.08,
       "reason": "stop_loss_drawdown_52pct",
       "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-shanghai-on-march-19-2026-12c",
+      "station": "Shanghai",
+      "date": "2026-03-19",
+      "dayName": "Thursday",
+      "tempLabel": "12°C",
+      "k": 12,
+      "dir": "BUY_NO",
+      "entryPrice": 0.69,
+      "shares": 14,
+      "cost": 9.66,
+      "entryTime": "2026-03-18T13:28:33.325Z",
+      "modelPAtEntry": 0.44,
+      "yesPAtEntry": 0.69,
+      "edgeAtEntry": 0.25,
+      "forecastMaxAtEntry": 12,
+      "muAtEntry": 11.7,
+      "fills": [
+        {
+          "price": 0.69,
+          "shares": 14,
+          "cost": 9.66
+        }
+      ],
+      "exitPrice": 0.72,
+      "exitTime": "2026-03-18T16:28:33.330Z",
+      "pnl": -5.74,
+      "reason": "stop_loss_drawdown_56pct",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-seoul-on-march-19-2026-10c",
+      "station": "Seoul",
+      "date": "2026-03-19",
+      "dayName": "Thursday",
+      "tempLabel": "10°C",
+      "k": 10,
+      "dir": "BUY_NO",
+      "entryPrice": 0.186,
+      "shares": 80.1,
+      "cost": 14.9,
+      "entryTime": "2026-03-18T10:28:33.177Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.21,
+      "edgeAtEntry": 0.21,
+      "forecastMaxAtEntry": 7,
+      "muAtEntry": 7,
+      "fills": [
+        {
+          "price": 0.19,
+          "shares": 34.8,
+          "cost": 6.61
+        },
+        {
+          "price": 0.18,
+          "shares": 22.3,
+          "cost": 4.01
+        },
+        {
+          "price": 0.16,
+          "shares": 5,
+          "cost": 0.8
+        }
+      ],
+      "toppedUp": true,
+      "topupTime": "2026-03-18T10:37:38.019Z",
+      "topupFills": [
+        {
+          "price": 0.2,
+          "shares": 5,
+          "cost": 1
+        },
+        {
+          "price": 0.19,
+          "shares": 13,
+          "cost": 2.47
+        }
+      ],
+      "exitPrice": 0.1917,
+      "exitTime": "2026-03-18T21:10:21.419Z",
+      "pnl": 45.39,
+      "reason": "time_tp_settlement_day_6h"
+    },
+    {
+      "slug": "highest-temperature-in-seoul-on-march-19-2026-9c",
+      "station": "Seoul",
+      "date": "2026-03-19",
+      "dayName": "Thursday",
+      "tempLabel": "9°C",
+      "k": 9,
+      "dir": "BUY_NO",
+      "entryPrice": 0.2679,
+      "shares": 56,
+      "cost": 15,
+      "entryTime": "2026-03-18T04:35:43.185Z",
+      "modelPAtEntry": 0.03,
+      "yesPAtEntry": 0.27,
+      "edgeAtEntry": 0.24,
+      "forecastMaxAtEntry": 7,
+      "muAtEntry": 7,
+      "fills": [
+        {
+          "price": 0.26,
+          "shares": 41,
+          "cost": 10.66
+        }
+      ],
+      "toppedUp": true,
+      "topupTime": "2026-03-18T07:28:34.692Z",
+      "topupFills": [
+        {
+          "price": 0.29,
+          "shares": 14,
+          "cost": 4.06
+        },
+        {
+          "price": 0.28,
+          "shares": 1,
+          "cost": 0.28
+        }
+      ],
+      "exitPrice": 0.3131,
+      "exitTime": "2026-03-18T21:10:21.419Z",
+      "pnl": 22.39,
+      "reason": "time_tp_settlement_day_6h"
+    },
+    {
+      "slug": "highest-temperature-in-shanghai-on-march-19-2026-11c",
+      "station": "Shanghai",
+      "date": "2026-03-19",
+      "dayName": "Thursday",
+      "tempLabel": "11°C",
+      "k": 11,
+      "dir": "BUY_YES",
+      "entryPrice": 0.1684,
+      "shares": 117.96000000000001,
+      "cost": 19.86,
+      "entryTime": "2026-03-18T16:28:33.330Z",
+      "modelPAtEntry": 0.469,
+      "yesPAtEntry": 0.145,
+      "edgeAtEntry": 0.324,
+      "forecastMaxAtEntry": 11,
+      "muAtEntry": 11,
+      "fills": [
+        {
+          "price": 0.15,
+          "shares": 24.96,
+          "cost": 3.74
+        },
+        {
+          "price": 0.16,
+          "shares": 23,
+          "cost": 3.68
+        },
+        {
+          "price": 0.17,
+          "shares": 16,
+          "cost": 2.72
+        },
+        {
+          "price": 0.18,
+          "shares": 54,
+          "cost": 9.72
+        }
+      ],
+      "exitPrice": 0.0799,
+      "exitTime": "2026-03-18T21:28:32.851Z",
+      "pnl": -10.43,
+      "reason": "stop_loss_extreme_price_yes9pct",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-london-on-march-19-2026-18c",
+      "station": "London",
+      "date": "2026-03-19",
+      "dayName": "Thursday",
+      "tempLabel": "18°C",
+      "k": 18,
+      "dir": "BUY_YES",
+      "entryPrice": 0.1398,
+      "shares": 142.48,
+      "cost": 19.91,
+      "entryTime": "2026-03-18T18:28:33.943Z",
+      "modelPAtEntry": 0.44,
+      "yesPAtEntry": 0.1445,
+      "edgeAtEntry": 0.296,
+      "forecastMaxAtEntry": 18,
+      "muAtEntry": 17.7,
+      "fills": [
+        {
+          "price": 0.138,
+          "shares": 11.48,
+          "cost": 1.58
+        },
+        {
+          "price": 0.139,
+          "shares": 10,
+          "cost": 1.39
+        },
+        {
+          "price": 0.14,
+          "shares": 121,
+          "cost": 16.94
+        }
+      ],
+      "exitPrice": 0.0894,
+      "exitTime": "2026-03-18T22:28:33.393Z",
+      "pnl": -7.17,
+      "reason": "stop_loss_extreme_price_yes10pct",
+      "orderType": "市价(强制)"
     }
   ],
-  "totalPnl": 39.700241000000005,
+  "totalPnl": 84.13202100000001,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-18T15:26:25.702Z",
+  "updatedAt": "2026-03-19T01:41:50.589Z",
   "rules": {
     "maxPositionPct": 0.15,
     "maxSingleTrade": 20,
