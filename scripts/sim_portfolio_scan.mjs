@@ -447,6 +447,31 @@ async function main(){
 
     if(modelP==null) continue;
 
+    // ─── 鱼身v5: 预报偏移1°C + edge极薄 → 提前退出 ───
+    {
+      const fShift1 = Math.abs(fMax - (pos.forecastMaxAtEntry || fMax));
+      const prelimEdge = pos.dir==='BUY_YES' ? (modelP - currentYesP) : ((1 - modelP) - currentNoP);
+      if(fShift1 >= 1 && prelimEdge < 0.05){
+        const slBookE = pos.dir==='BUY_YES' ? ba : baNo;
+        const slFillE = slBookE.simulateFill ? slBookE.simulateFill('bid', pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (baNo.bestBid||currentNoP||0.01))) : null;
+        let exitValE, exitPriceE;
+        if(slFillE && slFillE.filled){
+          exitPriceE = slFillE.avgPrice;
+          const exitSharesE = Math.min(slFillE.shares, pos.shares);
+          if(pos.dir==='BUY_YES') exitValE = exitSharesE * exitPriceE;
+          else exitValE = exitSharesE * (1 - exitPriceE);
+        } else { exitPriceE = ba.mid || currentYesP; exitValE = pos.dir==='BUY_YES' ? pos.shares*exitPriceE : pos.shares*(1-exitPriceE); }
+        const realPnlE = exitValE - pos.cost;
+        pf.cash += exitValE;
+        pf.totalPnl += realPnlE;
+        pf.closedTrades.push({...pos, exitPrice:exitPriceE, exitTime:now.toISOString(), pnl:Math.round(realPnlE*100)/100, reason:`stop_loss_forecast_drift_${fShift1}C_edge_thin`});
+        pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+        pf.positions.splice(pi,1);
+        actions.push(`🚨 止损(预报漂移+edge薄): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 预报偏移${fShift1}°C edge=${(prelimEdge*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitValE.toFixed(2)} PnL=$${realPnlE.toFixed(2)}`);
+        continue;
+      }
+    }
+
     // Check sell condition
     const currentEdge = pos.dir==='BUY_YES' ? (modelP - currentYesP) : ((1 - modelP) - currentNoP);
 
