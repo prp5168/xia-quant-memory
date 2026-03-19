@@ -40,6 +40,20 @@ function getScanDaysForStation(station) {
   return 0; // skip this city entirely if outside peak hours
 }
 
+function getLocalDayDiff(targetDateStr, station){
+  const todayStr = getLocalDateStr(station.utcOffset);
+  const a = new Date(todayStr + 'T00:00:00Z');
+  const b = new Date(targetDateStr + 'T00:00:00Z');
+  return Math.round((b - a) / 86400000);
+}
+
+function getSigmaForDate(targetDateStr, station, baseSigma){
+  const dayDiff = getLocalDayDiff(targetDateStr, station);
+  if(dayDiff <= 1) return baseSigma;      // 明天仓
+  if(dayDiff === 2) return Math.max(baseSigma, 1.0); // 后天仓
+  return Math.max(baseSigma, 1.1);        // 更远的仓，保守一点
+}
+
 const STATIONS = [
   { name: 'Shanghai', icao: 'ZSPD', geocode: '31.15,121.803', metarId: 'ZSPD', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14 },
   { name: 'Dallas', icao: 'KDFW', geocode: '32.899,-97.040', metarId: 'KDFW', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14 },
@@ -247,7 +261,8 @@ async function main(){
         if((dp.qpf?.[dpi]||0)>5&&(dp.cloudCover?.[dpi]||0)>80) mu-=0.3;
         if((dp.windSpeed?.[dpi]||0)>30) mu-=0.2;
         if((dp.relativeHumidity?.[dpi]||0)<40&&(dp.cloudCover?.[dpi]||0)<30) mu+=0.3;
-        const dist=buildDist(mu,rules.sigma);
+        const sigma = getSigmaForDate(pos.date, st, rules.sigma);
+        const dist=buildDist(mu,sigma);
         modelP=dist[pos.k]||0;
 
         // Check for forecast shift (stop-loss trigger)
@@ -642,7 +657,8 @@ async function main(){
       if(wind>30) mu-=0.2;
       if(humid<40&&cloud<30) mu+=0.3;
 
-      const dist=buildDist(mu,rules.sigma);
+      const sigma = getSigmaForDate(date, st, rules.sigma);
+      const dist=buildDist(mu,sigma);
       const eventSlug=dateSlug(date,st.name);
       let event;
       try{event=await getPMEvent(eventSlug);}catch{}
