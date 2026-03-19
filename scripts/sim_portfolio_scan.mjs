@@ -11,8 +11,9 @@ const TWC_API_KEY = 'e1f10a1e78da46f5b10a1e78da96f525';
 const PORTFOLIO_PATH = 'data/portfolio.json';
 
 // MODE: "full" (today+tomorrow+day-after) or "today-only" (only today's markets, for intraday intensive scan)
-// In today-only mode: ONLY check existing positions for stop-loss/take-profit, NO new buys
-// In full mode: check existing positions + scan tomorrow/day-after for NEW buys (not today)
+// Hard rule: NEVER open new positions on today's contracts in any mode
+// today-only mode: ONLY check existing positions for stop-loss/take-profit, NO new buys
+// full mode: check existing positions + scan only tomorrow/day-after for NEW buys
 // Rationale: we earn from "uncertainty premium decay" — buy a day early, sell as odds converge
 const SCAN_MODE = process.env.SCAN_MODE || 'full';
 
@@ -532,6 +533,12 @@ async function main(){
       const dayName=daily.dayOfWeek[i];
       const forecastMax=daily.calendarDayTemperatureMax[i];
       if(!date) continue;
+
+      // Fish-body hard rule: never open new positions on the station's local "today"
+      const localToday = getLocalDateStr(st.utcOffset);
+      if(date === localToday) {
+        continue;
+      }
 
       const hTemps=[];
       for(let h=0;h<(hourly.validTimeLocal||[]).length;h++){
