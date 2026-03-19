@@ -49,9 +49,9 @@ function getLocalDayDiff(targetDateStr, station){
 
 function getSigmaForDate(targetDateStr, station, baseSigma){
   const dayDiff = getLocalDayDiff(targetDateStr, station);
-  if(dayDiff <= 1) return baseSigma;      // 明天仓
-  if(dayDiff === 2) return Math.max(baseSigma, 1.0); // 后天仓
-  return Math.max(baseSigma, 1.1);        // 更远的仓，保守一点
+  if(dayDiff <= 1) return baseSigma;       // 明天仓
+  if(dayDiff === 2) return Math.max(baseSigma, 1.3); // 后天仓：抬高不确定性，避免模型过度自信
+  return Math.max(baseSigma, 1.5);         // 更远的仓，继续保守
 }
 
 const STATIONS = [
@@ -496,6 +496,7 @@ async function main(){
       pf.cash += exitValN;
       pf.totalPnl += realPnlN;
       pf.closedTrades.push({...pos, exitPrice:exitPriceN, exitTime:now.toISOString(), pnl:Math.round(realPnlN*100)/100, reason:`stop_loss_negative_edge_${Math.round((-currentEdge)*100)}pct_${pos.negativeEdgeCount||1}x`});
+      pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
       pf.positions.splice(pi,1);
       actions.push(`🚨 止损(edge转负): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 当前edge=${(currentEdge*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitValN.toFixed(2)} PnL=$${realPnlN.toFixed(2)}`);
       continue;
@@ -613,6 +614,7 @@ async function main(){
         pf.cash += exitVal0;
         pf.totalPnl += realPnl0;
         pf.closedTrades.push({...pos, exitPrice:exitPrice0, exitTime:now.toISOString(), pnl:Math.round(realPnl0*100)/100, reason:'take_profit_edge_decay_40pct'});
+        pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
         pf.positions.splice(pi,1);
         actions.push(`🎯 止盈(edge衰减): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 入场edge=${(initialEdge*100).toFixed(1)}% 当前edge=${(currentEdge*100).toFixed(1)}% | PnL=$${realPnl0.toFixed(2)}`);
         continue;
@@ -643,6 +645,7 @@ async function main(){
         pf.cash+=exitVal;
         pf.totalPnl+=realPnl;
         pf.closedTrades.push({...pos, exitPrice, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:'take_profit_60pct_edge_captured'});
+        pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
         pf.positions.splice(pi,1);
         actions.push(`🎯 止盈: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 已吃到${Math.round(priceMove/initialEdge*100)}%的edge | 成交@${(exitPrice*100).toFixed(1)}% | PnL=$${realPnl.toFixed(2)}`);
         continue;
@@ -854,9 +857,17 @@ async function main(){
           continue;
         }
 
-        // ─── 鱼身v2: 止损后当天禁止重入 ───
+        // ─── 鱼身v2: 止损/平仓后当天禁止重入 ───
         if(pf.stoppedToday[`${todayStr}:${mkt.slug}`]){
-          actions.push(`   ⛔ 禁止重入 ${st.name} ${date} ${title} ${dir}: 今天已止损过该标的`);
+          actions.push(`   ⛔ 禁止重入 ${st.name} ${date} ${title} ${dir}: 今天已平过该标的`);
+          continue;
+        }
+
+        // ─── 鱼身v3: 超大edge风控 ───
+        // 后天/更远标的如果edge大到离谱，优先视为模型可能过度自信，先跳过而不是直接建仓
+        const dayDiff = getLocalDayDiff(date, st);
+        if(dayDiff >= 2 && absEdge > 0.50){
+          actions.push(`   ⛔ 跳过 ${st.name} ${date} ${title} ${dir}: edge=${(absEdge*100).toFixed(1)}% 过大，疑似模型过度自信，等待下轮确认`);
           continue;
         }
 
