@@ -55,12 +55,23 @@ function getSigmaForDate(targetDateStr, station, baseSigma){
 }
 
 const STATIONS = [
-  { name: 'Shanghai', icao: 'ZSPD', geocode: '31.15,121.803', metarId: 'ZSPD', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14 },
-  { name: 'Dallas', icao: 'KDFW', geocode: '32.899,-97.040', metarId: 'KDFW', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14 },
-  { name: 'London', icao: 'EGLL', geocode: '51.470,-0.454', metarId: 'EGLL', tz: 'Europe/London', utcOffset: 0, peakStartLocal: 6, peakEndLocal: 14 },
-  { name: 'Seoul', icao: 'RKSI', geocode: '37.469,126.451', metarId: 'RKSI', tz: 'Asia/Seoul', utcOffset: 9, peakStartLocal: 6, peakEndLocal: 14 },
-  { name: 'Wellington', icao: 'NZWN', geocode: '-41.327,174.805', metarId: 'NZWN', tz: 'Pacific/Auckland', utcOffset: 13, peakStartLocal: 6, peakEndLocal: 14 },
-  { name: 'Milan', icao: 'LIMC', geocode: '45.630,8.723', metarId: 'LIMC', tz: 'Europe/Rome', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14 },
+  { name: 'Shanghai', icao: 'ZSPD', geocode: '31.15,121.803', metarId: 'ZSPD', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'shanghai-daily-weather' },
+  { name: 'Dallas', icao: 'KDFW', geocode: '32.899,-97.040', metarId: 'KDFW', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'dallas-daily-weather' },
+  { name: 'London', icao: 'EGLL', geocode: '51.470,-0.454', metarId: 'EGLL', tz: 'Europe/London', utcOffset: 0, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'london-daily-weather' },
+  { name: 'Seoul', icao: 'RKSI', geocode: '37.469,126.451', metarId: 'RKSI', tz: 'Asia/Seoul', utcOffset: 9, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'seoul-daily-weather' },
+  { name: 'Wellington', icao: 'NZWN', geocode: '-41.327,174.805', metarId: 'NZWN', tz: 'Pacific/Auckland', utcOffset: 13, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'wellington-daily-weather' },
+  { name: 'Milan', icao: 'LIMC', geocode: '45.630,8.723', metarId: 'LIMC', tz: 'Europe/Rome', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'milan-daily-weather' },
+  { name: 'Tel Aviv', icao: 'LLBG', geocode: '32.011,34.886', metarId: 'LLBG', tz: 'Asia/Jerusalem', utcOffset: 2, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'tel-aviv-daily-weather' },
+  { name: 'Hong Kong', icao: 'VHHH', geocode: '22.308,113.918', metarId: 'VHHH', tz: 'Asia/Hong_Kong', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'hong-kong-daily-weather' },
+  { name: 'Chicago', icao: 'KORD', geocode: '41.974,-87.907', metarId: 'KORD', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'chicago-daily-weather' },
+  { name: 'NYC', icao: 'KJFK', geocode: '40.641,-73.778', metarId: 'KJFK', tz: 'America/New_York', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'nyc-daily-weather' },
+  { name: 'Lucknow', icao: 'VILK', geocode: '26.761,80.889', metarId: 'VILK', tz: 'Asia/Kolkata', utcOffset: 5.5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'lucknow-daily-weather' },
+  { name: 'Paris', icao: 'LFPG', geocode: '49.009,2.547', metarId: 'LFPG', tz: 'Europe/Paris', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'paris-daily-weather' },
+  { name: 'Miami', icao: 'KMIA', geocode: '25.795,-80.287', metarId: 'KMIA', tz: 'America/New_York', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'miami-daily-weather' },
+  { name: 'Toronto', icao: 'CYYZ', geocode: '43.677,-79.624', metarId: 'CYYZ', tz: 'America/Toronto', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'toronto-daily-weather' },
+  { name: 'Seattle', icao: 'KSEA', geocode: '47.450,-122.309', metarId: 'KSEA', tz: 'America/Los_Angeles', utcOffset: -7, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'seattle-daily-weather' },
+  { name: 'Warsaw', icao: 'EPWA', geocode: '52.166,20.967', metarId: 'EPWA', tz: 'Europe/Warsaw', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'warsaw-daily-weather' },
+  { name: 'Madrid', icao: 'LEMD', geocode: '40.472,-3.561', metarId: 'LEMD', tz: 'Europe/Madrid', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'madrid-daily-weather' },
 ];
 
 // ─── Math ──────────────────────────────────────────────────
@@ -153,6 +164,24 @@ function dateSlug(dateStr,city){
   return`highest-temperature-in-${city.toLowerCase()}-on-${months[d.getUTCMonth()]}-${d.getUTCDate()}-${d.getUTCFullYear()}`;
 }
 
+async function getTopStationsByEventVolume(targetDate, heldStationNames = new Set(), topN = 10){
+  const ranked = [];
+  for(const st of STATIONS){
+    try{
+      const event = await getPMEvent(dateSlug(targetDate, st.name));
+      if(event?.markets?.length){
+        ranked.push({ station: st, volume: Number(event.volume || event.volume24hr || 0), event });
+      }
+    }catch{}
+  }
+  ranked.sort((a,b)=>b.volume-a.volume);
+  const chosen = ranked.slice(0, topN).map(x=>x.station);
+  for(const name of heldStationNames){
+    const st = STATIONS.find(s=>s.name===name);
+    if(st && !chosen.some(x=>x.name===st.name)) chosen.push(st);
+  }
+  return chosen;
+}
 
 function getCityExposure(pf, city){
   return pf.positions.filter(p=>p.station===city).reduce((s,p)=>s+(Number(p.cost)||0),0);
@@ -666,7 +695,34 @@ async function main(){
   }
 
   // ─── Phase 2: Scan for new BUY opportunities ────────────
-  for(const st of STATIONS){
+  const heldStationNames = new Set(pf.positions.map(p => p.station));
+  const targetScanDates = new Set();
+  if(SCAN_MODE === 'full'){
+    for(const st of STATIONS.slice(0,1)){
+      for(let i=1;i<3;i++){
+        const d = (() => {
+          const nowLocal = new Date(now.getTime() + st.utcOffset * 3600000);
+          nowLocal.setUTCHours(0,0,0,0);
+          nowLocal.setUTCDate(nowLocal.getUTCDate() + i);
+          return nowLocal.toISOString().slice(0,10);
+        })();
+        targetScanDates.add(d);
+      }
+      break;
+    }
+  }
+  const topStationsByDate = {};
+  for(const date of targetScanDates){
+    topStationsByDate[date] = await getTopStationsByEventVolume(date, heldStationNames, 10);
+  }
+  const selectedStationNames = new Set(Object.values(topStationsByDate).flat().map(s => s.name));
+  for(const name of heldStationNames) selectedStationNames.add(name);
+  const stationsToScan = STATIONS.filter(st => selectedStationNames.has(st.name));
+  for(const [date, sts] of Object.entries(topStationsByDate)){
+    actions.push(`📈 ${date} 成交量前10城市: ${sts.map(s => s.name).join(', ')}`);
+  }
+
+  for(const st of stationsToScan){
     let daily,hourly;
     try{
       daily=await getTWCForecast(st.geocode);
@@ -710,6 +766,9 @@ async function main(){
       const dayName=daily.dayOfWeek[i];
       const forecastMax=daily.calendarDayTemperatureMax[i];
       if(!date) continue;
+      const topForDate = topStationsByDate[date] || [];
+      const isHeldCity = heldStationNames.has(st.name);
+      if(SCAN_MODE === 'full' && !isHeldCity && !topForDate.some(x => x.name === st.name)) continue;
 
       // Fish-body hard rule: never open new positions on the station's local "today"
       const localToday = getLocalDateStr(st.utcOffset);
