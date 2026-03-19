@@ -367,8 +367,32 @@ async function main(){
 
     if(modelP==null) continue;
 
-    // Check sell condition: edge reversed >= 20%
+    // Check sell condition
     const currentEdge = pos.dir==='BUY_YES' ? (modelP - currentYesP) : (currentYesP - modelP);
+
+    // ─── 第二轮优化: 模型翻转止损（模型已明显站到对面） ───
+    if(currentEdge < -0.10){
+      const sellSide0 = pos.dir==='BUY_YES' ? 'bid' : 'ask';
+      const sellFill0 = ba.simulateFill ? ba.simulateFill(sellSide0, pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||currentYesP))) : null;
+      let exitVal0, exitPrice0;
+      if(sellFill0 && sellFill0.filled){
+        const exitShares0 = Math.min(sellFill0.shares, pos.shares);
+        exitPrice0 = sellFill0.avgPrice;
+        if(pos.dir==='BUY_YES') exitVal0 = exitShares0 * exitPrice0;
+        else exitVal0 = exitShares0 * (1 - exitPrice0);
+      } else {
+        exitPrice0 = ba.mid || currentYesP;
+        if(pos.dir==='BUY_YES') exitVal0 = pos.shares * exitPrice0;
+        else exitVal0 = pos.shares * (1 - exitPrice0);
+      }
+      const realPnl0 = exitVal0 - pos.cost;
+      pf.cash += exitVal0;
+      pf.totalPnl += realPnl0;
+      pf.closedTrades.push({...pos, exitPrice:exitPrice0, exitTime:now.toISOString(), pnl:Math.round(realPnl0*100)/100, reason:`stop_loss_model_flip_${Math.round((-currentEdge)*100)}pct`});
+      pf.positions.splice(pi,1);
+      actions.push(`🚨 止损(模型翻转): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 当前edge=${(currentEdge*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitVal0.toFixed(2)} PnL=$${realPnl0.toFixed(2)}`);
+      continue;
+    }
 
     // ─── 鱼身v2: 结算日早晨时间止盈 ───
     // If today is the settlement day and we're in the heating window, prioritize exiting profitable positions
@@ -443,10 +467,42 @@ async function main(){
       continue;
     }
 
-    // Also check: if position is profitable and price moved significantly toward our model
-    // "sell before settlement" strategy: if we captured >60% of initial edge, take profit
+    // Also check: if position is profitable and edge decayed significantly, take profit
     const initialEdge = Math.abs(pos.edgeAtEntry||0);
     const priceMove = pos.dir==='BUY_YES' ? (currentYesP - pos.entryPrice) : (pos.entryPrice - currentYesP);
+
+    // ─── 第二轮优化: edge 衰减止盈（只剩入场edge的40%以下就兑现） ───
+    let currentValForTp;
+    if(pos.dir==='BUY_YES') currentValForTp = pos.shares * currentYesP;
+    else currentValForTp = pos.shares * (1 - currentYesP);
+    const floatingPnlForTp = currentValForTp - pos.cost;
+    if(initialEdge > 0 && currentEdge > 0 && currentEdge <= initialEdge * 0.4 && floatingPnlForTp > 0){
+      const tpSide0 = pos.dir==='BUY_YES' ? 'bid' : 'ask';
+      const tpBudget0 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||currentYesP));
+      const tpFill0 = ba.simulateFill ? ba.simulateFill(tpSide0, tpBudget0) : null;
+      let exitVal0, exitPrice0;
+      if(tpFill0 && tpFill0.filled){
+        const exitShares0 = Math.min(tpFill0.shares, pos.shares);
+        exitPrice0 = tpFill0.avgPrice;
+        if(pos.dir==='BUY_YES') exitVal0 = exitShares0 * exitPrice0;
+        else exitVal0 = exitShares0 * (1 - exitPrice0);
+      } else {
+        exitPrice0 = ba.mid || currentYesP;
+        if(pos.dir==='BUY_YES') exitVal0 = pos.shares * exitPrice0;
+        else exitVal0 = pos.shares * (1 - exitPrice0);
+      }
+      const realPnl0 = exitVal0 - pos.cost;
+      if(realPnl0 > 0){
+        pf.cash += exitVal0;
+        pf.totalPnl += realPnl0;
+        pf.closedTrades.push({...pos, exitPrice:exitPrice0, exitTime:now.toISOString(), pnl:Math.round(realPnl0*100)/100, reason:'take_profit_edge_decay_40pct'});
+        pf.positions.splice(pi,1);
+        actions.push(`🎯 止盈(edge衰减): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 入场edge=${(initialEdge*100).toFixed(1)}% 当前edge=${(currentEdge*100).toFixed(1)}% | PnL=$${realPnl0.toFixed(2)}`);
+        continue;
+      }
+    }
+
+    // "sell before settlement" strategy: if we captured >60% of initial edge, take profit
     if(initialEdge > 0 && priceMove/initialEdge > 0.6 && priceMove > 0.05){
       // Take profit — simulate fill
       const tpSide = pos.dir==='BUY_YES' ? 'bid' : 'ask';
@@ -476,14 +532,16 @@ async function main(){
     }
 
     // ─── Check for averaging down (补仓) ───
-    // 鱼身v2: only allow topup for fish-body positions (not same-day), not near settlement window
+    // 第二轮优化: 模型不能明显恶化，且距离结算至少24小时，补仓比例降到33%
     const isSameDayPos = pos.date === getLocalDateStr(st?.utcOffset||8);
     const priceDropped = pos.dir==='BUY_YES' ? (currentYesP < pos.entryPrice * 0.9) : (currentYesP > pos.entryPrice * 1.1);
     const edgeStillValid = currentEdge >= rules.minEdge;
     const notAlreadyToppedUp = !pos.toppedUp;
-    const maxTopup = Math.min(pos.cost * 0.5, rules.maxSingleTrade - pos.cost);
+    const maxTopup = Math.min(pos.cost * 0.33, rules.maxSingleTrade - pos.cost);
+    const modelNotWorse = pos.dir==='BUY_YES' ? (modelP >= (pos.modelPAtEntry ?? modelP) - 0.05) : (modelP <= (pos.modelPAtEntry ?? modelP) + 0.05);
+    const hoursToSettlement = (new Date(pos.date + 'T23:59:59Z') - now) / 3600000;
 
-    if(priceDropped && edgeStillValid && notAlreadyToppedUp && !isSameDayPos && maxTopup >= 2 && pf.cash >= 2){
+    if(priceDropped && edgeStillValid && notAlreadyToppedUp && !isSameDayPos && modelNotWorse && hoursToSettlement >= 24 && maxTopup >= 2 && pf.cash >= 2){
       const topupBudget = Math.min(maxTopup, pf.cash * 0.1); // conservative: max 10% of cash
       if(topupBudget >= 2){
         const topSide = pos.dir==='BUY_YES' ? 'ask' : 'bid';
