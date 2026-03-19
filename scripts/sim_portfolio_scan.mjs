@@ -139,6 +139,35 @@ function dateSlug(dateStr,city){
   return`highest-temperature-in-${city.toLowerCase()}-on-${months[d.getUTCMonth()]}-${d.getUTCDate()}-${d.getUTCFullYear()}`;
 }
 
+
+function getCityExposure(pf, city){
+  return pf.positions.filter(p=>p.station===city).reduce((s,p)=>s+(Number(p.cost)||0),0);
+}
+
+function isExactTempTitle(title=''){
+  const t=title.toLowerCase();
+  return /\d+/.test(t) && !t.includes('or higher') && !t.includes('or below');
+}
+
+async function estimateLiquidationValue(pos){
+  try{
+    const mkt=await fetchJSON(`https://gamma-api.polymarket.com/markets?slug=${encodeURIComponent(pos.slug)}`);
+    const m=mkt[0];
+    if(!m) return pos.cost;
+    const tokenIds=JSON.parse(m.clobTokenIds||'[]');
+    const bk=await getBook(tokenIds[0]);
+    const ba=parseBook(bk);
+    if(pos.dir==='BUY_YES'){
+      const px=ba.bestBid ?? ba.mid ?? 0;
+      return Math.round(pos.shares * px * 100)/100;
+    }
+    const px=ba.bestAsk ?? ba.mid ?? 1;
+    return Math.round(pos.shares * (1-px) * 100)/100;
+  }catch{
+    return Math.round((Number(pos.cost)||0)*100)/100;
+  }
+}
+
 // ─── Main ──────────────────────────────────────────────────
 async function main(){
   const now=new Date();
@@ -563,6 +592,18 @@ async function main(){
 
       let dayScanned=0, dayMaxEdge=0, dayMaxEdgeLabel='';
 
+      const exactMarkets = event.markets.filter(m=>!m.closed && isExactTempTitle(m.groupItemTitle||''));
+      let peakK = null;
+      let peakYes = -1;
+      for(const em of exactMarkets){
+        try{
+          const px = JSON.parse(em.outcomePrices||'[]');
+          const yes = Number(px[0]||0);
+          const tm = (em.groupItemTitle||'').match(/(\d+)/);
+          if(tm && yes > peakYes){ peakYes = yes; peakK = Number(tm[1]); }
+        }catch{}
+      }
+
       for(const mkt of event.markets){
         if(mkt.closed) continue;
         const px=JSON.parse(mkt.outcomePrices||'[]');
@@ -602,15 +643,29 @@ async function main(){
 
         // ─── 鱼身v2: 赔率位置过滤 ───
         if(dir==='BUY_YES'){
-          if(yesP < 0.12 || yesP > 0.50){
-            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_YES: 赔率位置${(yesP*100).toFixed(0)}%不在舒适区(12-50%)`);
+          if(yesP < 0.12 || yesP > 0.40){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_YES: 赔率位置${(yesP*100).toFixed(0)}%不在舒适区(12-40%)`);
             continue;
           }
         } else { // BUY_NO
-          if(yesP < 0.55 || yesP > 0.85){
-            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO: 赔率位置Yes=${(yesP*100).toFixed(0)}%不在舒适区(55-85%)`);
+          if(yesP < 0.55 || yesP > 0.80){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO: 赔率位置Yes=${(yesP*100).toFixed(0)}%不在舒适区(55-80%)`);
             continue;
           }
+        }
+
+        // ─── 第一轮优化: 单城市暴露上限 ───
+        const cityExposure = getCityExposure(pf, st.name);
+        const cityExposureLimit = pf.initialCapital * 0.6;
+        if(cityExposure >= cityExposureLimit){
+          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 城市暴露已达上限$${cityExposureLimit.toFixed(2)}`);
+          continue;
+        }
+
+        // ─── 第一轮优化: 主峰拥挤点过滤（精确温度主峰默认不做，除非edge≥30%） ───
+        if(isExactTempTitle(title) && peakK != null && k === peakK && absEdge < 0.30){
+          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 属于市场主峰拥挤点`);
+          continue;
         }
 
         // ─── 修复1: 建仓前检查METAR, 如果实测已确认则禁止建仓 ───
@@ -633,7 +688,8 @@ async function main(){
         try{const bk=await getBook(tokenIds[0]);ba=parseBook(bk);}catch{}
 
         // Position sizing: max 15% of initial capital, max $15
-        const budgetWant=Math.min(rules.maxSingleTrade, pf.cash*rules.maxPositionPct);
+        const cityRemaining = Math.max(0, cityExposureLimit - cityExposure);
+        const budgetWant=Math.min(rules.maxSingleTrade, pf.cash*rules.maxPositionPct, cityRemaining);
         if(budgetWant<2) continue;
 
         // Simulate actual fill against real orderbook
