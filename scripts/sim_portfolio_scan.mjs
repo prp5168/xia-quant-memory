@@ -409,38 +409,45 @@ async function main(){
       continue;
     }
 
-    // ─── 鱼身v2: 结算日早晨时间止盈 ───
-    // If today is the settlement day and we're in the heating window, prioritize exiting profitable positions
+    // ─── 鱼身v3: 结算日早晨分层止盈 ───
+    // First trigger on settlement morning sells ~50%, then later rules can handle the rest
     if(pos.date === getLocalDateStr(st?.utcOffset||8)){
       const localH = getLocalHour(st?.utcOffset||8);
-      if(localH >= 6 && localH <= 14){
-        // Settlement day, heating hours — check if profitable, if so exit
+      if(localH >= 6 && localH <= 14 && !pos.partialTpDone){
         let currentVal;
         if(pos.dir==='BUY_YES') currentVal = pos.shares * currentYesP;
         else currentVal = pos.shares * (1 - currentYesP);
         const floatPnl = currentVal - pos.cost;
         if(floatPnl > 0){
+          const targetShares = Math.max(1, pos.shares * 0.5);
           const tpSide = pos.dir==='BUY_YES' ? 'bid' : 'ask';
-          const tpBudget = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||(1-currentYesP)));
+          const tpBudget = targetShares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP) : (ba.bestAsk||(1-currentYesP)));
           const tpFill = ba.simulateFill ? ba.simulateFill(tpSide, tpBudget) : null;
-          let exitVal, exitPrice;
+          let exitVal, exitPrice, exitShares;
           if(tpFill && tpFill.filled){
-            const exitShares = Math.min(tpFill.shares, pos.shares);
+            exitShares = Math.min(tpFill.shares, targetShares, pos.shares);
             exitPrice = tpFill.avgPrice;
             if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
             else exitVal = exitShares * (1 - exitPrice);
           } else {
+            exitShares = Math.min(targetShares, pos.shares);
             exitPrice = ba.mid || currentYesP;
-            if(pos.dir==='BUY_YES') exitVal = pos.shares * exitPrice;
-            else exitVal = pos.shares * (1 - exitPrice);
+            if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
+            else exitVal = exitShares * (1 - exitPrice);
           }
-          const realPnl = exitVal - pos.cost;
-          if(realPnl > 0){
+          const costPortion = pos.cost * (exitShares / pos.shares);
+          const realPnl = exitVal - costPortion;
+          if(realPnl > 0 && exitShares > 0){
             pf.cash += exitVal;
             pf.totalPnl += realPnl;
-            pf.closedTrades.push({...pos, exitPrice, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:`time_tp_settlement_day_${localH}h`});
-            pf.positions.splice(pi,1);
-            actions.push(`⏰ 时间止盈(结算日): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 当地${localH}时 | 浮盈$${floatPnl.toFixed(2)} | 成交@${(exitPrice*100).toFixed(1)}% | PnL=$${realPnl.toFixed(2)}`);
+            pf.closedTrades.push({...pos, exitPrice, exitTime:now.toISOString(), shares:exitShares, cost:Math.round(costPortion*100)/100, pnl:Math.round(realPnl*100)/100, reason:`time_tp_partial_settlement_day_${localH}h`});
+            pos.shares = Math.round((pos.shares - exitShares) * 10000) / 10000;
+            pos.cost = Math.round((pos.cost - costPortion) * 100) / 100;
+            pos.partialTpDone = true;
+            actions.push(`⏰ 分层止盈(结算日): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 当地${localH}时先卖一半 | 成交${exitShares}股@${(exitPrice*100).toFixed(1)}% | PnL=$${realPnl.toFixed(2)}`);
+            if(pos.shares <= 0.0001){
+              pf.positions.splice(pi,1);
+            }
             continue;
           }
         }
