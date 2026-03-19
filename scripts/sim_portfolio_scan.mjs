@@ -303,13 +303,14 @@ async function main(){
     let modelP=null;
     let currentDist=null;
     let adjacentStopNote='';
+    let fMax=null;
     try{
       const daily=await getTWCForecast(st.geocode);
       const hourly=await getTWCHourly(st.geocode);
       const dates=daily.validTimeLocal.map(d=>d.slice(0,10));
       const idx=dates.indexOf(pos.date);
       if(idx>=0){
-        const fMax=daily.calendarDayTemperatureMax[idx];
+        fMax=daily.calendarDayTemperatureMax[idx];
         const hTemps=[];
         for(let h=0;h<(hourly.validTimeLocal||[]).length;h++){
           if(hourly.validTimeLocal[h]?.startsWith(pos.date)) hTemps.push(hourly.temperature[h]);
@@ -1077,7 +1078,8 @@ async function main(){
 
   const actionKeywords = ['🛒 买入', '🚨 止损', '💰 卖出', '🎯 止盈', '⏰ 分层止盈', '🏁 结算', '📥 补仓'];
   const compactActionLines = actions.filter(line => actionKeywords.some(k => line.includes(k)) || line.includes('💡 逻辑:'));
-  const summaryLine = `📌 ${SCAN_MODE}｜持仓${pf.positions.length}个｜现金$${correctedCash.toFixed(2)}｜可平总资产$${(correctedCash+posVal).toFixed(2)}｜已平仓${pf.closedTrades.length}笔｜累计PnL $${correctedClosedPnl.toFixed(2)}`;
+  const totalAssets = correctedCash + posVal;
+  const summaryLine = `📌 ${SCAN_MODE}｜持仓${pf.positions.length}个｜现金$${correctedCash.toFixed(2)}｜可平资产$${posVal.toFixed(2)}｜总资产$${totalAssets.toFixed(2)}｜已平仓${pf.closedTrades.length}笔｜累计PnL $${correctedClosedPnl.toFixed(2)}`;
 
   if(compactActionLines.length === 0){
     console.log(`无动作｜${summaryLine}`);
