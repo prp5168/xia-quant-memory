@@ -1,6 +1,6 @@
 {
   "initialCapital": 400,
-  "cash": 628.78,
+  "cash": 627.83,
   "positions": [
     {
       "slug": "highest-temperature-in-seoul-on-march-21-2026-9c",
@@ -72,7 +72,8 @@
           "shares": 73,
           "cost": 16.06
         }
-      ]
+      ],
+      "negativeEdgeCount": 0
     },
     {
       "slug": "highest-temperature-in-toronto-on-march-20-2026-6c",
@@ -113,7 +114,8 @@
           "shares": 31,
           "cost": 7.44
         }
-      ]
+      ],
+      "negativeEdgeCount": 0
     }
   ],
   "closedTrades": [
@@ -1065,11 +1067,52 @@
       "exitTime": "2026-03-19T04:02:06.881Z",
       "pnl": 0.3,
       "reason": "take_profit_edge_decay_40pct"
+    },
+    {
+      "slug": "highest-temperature-in-dallas-on-march-20-2026-90-91f",
+      "station": "Dallas",
+      "date": "2026-03-20",
+      "dayName": "Friday",
+      "tempLabel": "90-91°F",
+      "k": 90,
+      "dir": "BUY_NO",
+      "entryPrice": 0.7996,
+      "shares": 24,
+      "cost": 19.19,
+      "entryTime": "2026-03-19T05:02:22.008Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.235,
+      "noPAtEntry": 0.765,
+      "edgeAtEntry": 0.235,
+      "forecastMaxAtEntry": 33,
+      "muAtEntry": 32.7,
+      "fills": [
+        {
+          "price": 0.77,
+          "shares": 5,
+          "cost": 3.85
+        },
+        {
+          "price": 0.8,
+          "shares": 5,
+          "cost": 4
+        },
+        {
+          "price": 0.81,
+          "shares": 14,
+          "cost": 11.34
+        }
+      ],
+      "exitPrice": 0.76,
+      "exitTime": "2026-03-19T05:05:04.813Z",
+      "pnl": -0.95,
+      "reason": "stop_loss_forecast_shift_2C",
+      "orderType": "市价(强制)"
     }
   ],
-  "totalPnl": 288.4975,
+  "totalPnl": 287.5475,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-19T04:02:06.881Z",
+  "updatedAt": "2026-03-19T05:05:52.612Z",
   "rules": {
     "maxPositionPct": 0.15,
     "maxSingleTrade": 20,
@@ -1087,6 +1130,7 @@
     "strategy": "buy_early_sell_before_settlement"
   },
   "stoppedToday": {
-    "2026-03-19:highest-temperature-in-seoul-on-march-20-2026-9c": "2026-03-19T03:35:04.689Z"
+    "2026-03-19:highest-temperature-in-seoul-on-march-20-2026-9c": "2026-03-19T03:35:04.689Z",
+    "2026-03-19:highest-temperature-in-dallas-on-march-20-2026-90-91f": "2026-03-19T05:05:04.813Z"
   }
 }

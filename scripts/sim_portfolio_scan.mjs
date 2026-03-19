@@ -721,6 +721,7 @@ async function main(){
   for(const [date, sts] of Object.entries(topStationsByDate)){
     actions.push(`📈 ${date} 成交量前10城市: ${sts.map(s => s.name).join(', ')}`);
   }
+  actions.push(`🧭 去重后扫描城市: ${stationsToScan.map(s => s.name).join(', ')}`);
 
   for(const st of stationsToScan){
     let daily,hourly;
@@ -866,8 +867,8 @@ async function main(){
             continue;
           }
         } else { // BUY_NO
-          if(yesP < 0.55 || yesP > 0.80){
-            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO: 赔率位置Yes=${(yesP*100).toFixed(0)}%不在舒适区(55-80%)`);
+          if(noP < 0.12 || noP > 0.40){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO: 赔率位置NO=${(noP*100).toFixed(0)}%不在舒适区(12-40%)`);
             continue;
           }
         }
