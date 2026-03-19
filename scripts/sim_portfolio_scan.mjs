@@ -49,9 +49,9 @@ function getLocalDayDiff(targetDateStr, station){
 
 function getSigmaForDate(targetDateStr, station, baseSigma){
   const dayDiff = getLocalDayDiff(targetDateStr, station);
-  if(dayDiff <= 1) return baseSigma;       // 明天仓
-  if(dayDiff === 2) return Math.max(baseSigma, 1.3); // 后天仓：抬高不确定性，避免模型过度自信
-  return Math.max(baseSigma, 1.5);         // 更远的仓，继续保守
+  if(dayDiff <= 0) return 0.8;  // 当天
+  if(dayDiff === 1) return 1.0; // 明天
+  return 1.5;                   // 后天及更远
 }
 
 const STATIONS = [
