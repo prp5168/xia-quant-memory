@@ -16,6 +16,7 @@ const PORTFOLIO_PATH = 'data/portfolio.json';
 // full mode: check existing positions + scan only tomorrow/day-after for NEW buys
 // Rationale: we earn from "uncertainty premium decay" — buy a day early, sell as odds converge
 const SCAN_MODE = process.env.SCAN_MODE || 'full';
+const OBSERVE_ONLY = process.env.OBSERVE_ONLY === '1' || process.env.OBSERVE_ONLY === 'true';
 
 function getLocalHour(utcOffset) {
   const now = new Date();
@@ -1032,25 +1033,33 @@ async function main(){
           muAtEntry:Math.round(mu*10)/10,
           fills:fill.fills, // detailed fill record
         };
-        pf.positions.push(position);
-        pf.cash-=cost;
-        pf.cash=Math.round(pf.cash*100)/100;
-
         const reason=dir==='BUY_YES'
           ?`模型${(modelP*100).toFixed(1)}%远高于盘口${(yesP*100).toFixed(1)}%`
           :`模型${(modelP*100).toFixed(1)}%远低于盘口${(yesP*100).toFixed(1)}%`;
 
-        actions.push(`\n🛒 买入: ${st.name} ${date}(${dayName}) ${title} ${dir}`);
-        actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}%`);
-        actions.push(`   📊 天气: 风${wind}km/h 降水${precip}mm 云${cloud}% 湿度${humid}%`);
-        actions.push(`   💵 实际成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
-        if(fill.fills.length>1){
-          actions.push(`   📖 逐档吃单: ${fill.fills.map(f=>`${f.shares}股@${(f.price*100).toFixed(1)}%=$${f.cost}`).join(' → ')}`);
+        if(OBSERVE_ONLY){
+          // 纯观察模式：只记录信号，不实际建仓
+          actions.push(`\n👁️ [观察] 信号: ${st.name} ${date}(${dayName}) ${title} ${dir}`);
+          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}%`);
+          actions.push(`   📊 天气: 风${wind}km/h 降水${precip}mm 云${cloud}% 湿度${humid}%`);
+          actions.push(`   💵 模拟成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
+          actions.push(`   📈 盘口: 买一${ba.bestBid} 卖一${ba.bestAsk} 价差${ba.spread?.toFixed(3)}`);
+        } else {
+          pf.positions.push(position);
+          pf.cash-=cost;
+          pf.cash=Math.round(pf.cash*100)/100;
+          actions.push(`\n🛒 买入: ${st.name} ${date}(${dayName}) ${title} ${dir}`);
+          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}%`);
+          actions.push(`   📊 天气: 风${wind}km/h 降水${precip}mm 云${cloud}% 湿度${humid}%`);
+          actions.push(`   💵 实际成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
+          if(fill.fills.length>1){
+            actions.push(`   📖 逐档吃单: ${fill.fills.map(f=>`${f.shares}股@${(f.price*100).toFixed(1)}%=$${f.cost}`).join(' → ')}`);
+          }
+          if(fill.worstPrice!==fill.fills[0]?.price){
+            actions.push(`   ⚠️ 滑点: 最优${(fill.fills[0]?.price*100).toFixed(1)}% → 最差${(fill.worstPrice*100).toFixed(1)}%`);
+          }
+          actions.push(`   📈 盘口: 买一${ba.bestBid} 卖一${ba.bestAsk} 价差${ba.spread?.toFixed(3)}`);
         }
-        if(fill.worstPrice!==fill.fills[0]?.price){
-          actions.push(`   ⚠️ 滑点: 最优${(fill.fills[0]?.price*100).toFixed(1)}% → 最差${(fill.worstPrice*100).toFixed(1)}%`);
-        }
-        actions.push(`   📈 盘口: 买一${ba.bestBid} 卖一${ba.bestAsk} 价差${ba.spread?.toFixed(3)}`);
         cityBought++;
       }
 
@@ -1081,7 +1090,8 @@ async function main(){
   const actionKeywords = ['🛒 买入', '🚨 止损', '💰 卖出', '🎯 止盈', '⏰ 分层止盈', '🏁 结算', '📥 补仓'];
   const compactActionLines = actions.filter(line => actionKeywords.some(k => line.includes(k)) || line.includes('💡 逻辑:'));
   const totalAssets = correctedCash + posVal;
-  const summaryLine = `📌 ${SCAN_MODE}｜持仓${pf.positions.length}个｜现金$${correctedCash.toFixed(2)}｜可平资产$${posVal.toFixed(2)}｜总资产$${totalAssets.toFixed(2)}｜已平仓${pf.closedTrades.length}笔｜累计PnL $${correctedClosedPnl.toFixed(2)}`;
+  const modeLabel = OBSERVE_ONLY ? `${SCAN_MODE}👁️观察` : SCAN_MODE;
+  const summaryLine = `📌 ${modeLabel}｜持仓${pf.positions.length}个｜现金$${correctedCash.toFixed(2)}｜可平资产$${posVal.toFixed(2)}｜总资产$${totalAssets.toFixed(2)}｜已平仓${pf.closedTrades.length}笔｜累计PnL $${correctedClosedPnl.toFixed(2)}`;
 
   if(compactActionLines.length === 0){
     console.log(`无动作｜${summaryLine}`);
