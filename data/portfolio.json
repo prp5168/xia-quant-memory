@@ -1,206 +1,38 @@
 {
   "initialCapital": 400,
-  "cash": 241,
+  "cash": 216.300256,
   "positions": [
     {
-      "slug": "highest-temperature-in-toronto-on-march-20-2026-6c",
-      "station": "Toronto",
-      "date": "2026-03-20",
-      "dayName": "Friday",
-      "tempLabel": "6°C",
-      "k": 6,
+      "slug": "highest-temperature-in-warsaw-on-march-22-2026-15corhigher",
+      "station": "Warsaw",
+      "date": "2026-03-22",
+      "dayName": "Sunday",
+      "tempLabel": "15°C or higher",
+      "k": 15,
       "dir": "BUY_YES",
-      "entryPrice": 0.2089,
-      "shares": 95.65,
-      "cost": 19.98,
-      "entryTime": "2026-03-19T04:02:06.881Z",
-      "modelPAtEntry": 0.42,
-      "yesPAtEntry": 0.155,
-      "noPAtEntry": 0.845,
-      "edgeAtEntry": 0.265,
-      "forecastMaxAtEntry": 7,
-      "muAtEntry": 6.4,
+      "entryPrice": 0.2587,
+      "shares": 77,
+      "cost": 19.92,
+      "entryTime": "2026-03-20T02:05:17.731Z",
+      "modelPAtEntry": 0.553,
+      "yesPAtEntry": 0.235,
+      "noPAtEntry": 0.765,
+      "edgeAtEntry": 0.318,
+      "forecastMaxAtEntry": 15,
+      "muAtEntry": 14.7,
       "fills": [
         {
-          "price": 0.16,
-          "shares": 24.65,
-          "cost": 3.94
-        },
-        {
-          "price": 0.17,
+          "price": 0.25,
           "shares": 10,
-          "cost": 1.7
-        },
-        {
-          "price": 0.23,
-          "shares": 30,
-          "cost": 6.9
-        },
-        {
-          "price": 0.24,
-          "shares": 31,
-          "cost": 7.44
-        }
-      ],
-      "negativeEdgeCount": 0,
-      "adjacentLossCount": 0
-    },
-    {
-      "slug": "highest-temperature-in-shanghai-on-march-21-2026-14c",
-      "station": "Shanghai",
-      "date": "2026-03-21",
-      "dayName": "Saturday",
-      "tempLabel": "14°C",
-      "k": 14,
-      "dir": "BUY_YES",
-      "entryPrice": 0.2259,
-      "shares": 88.53,
-      "cost": 19.99,
-      "entryTime": "2026-03-19T08:05:04.709Z",
-      "modelPAtEntry": 0.383,
-      "yesPAtEntry": 0.155,
-      "noPAtEntry": 0.845,
-      "edgeAtEntry": 0.228,
-      "forecastMaxAtEntry": 14,
-      "muAtEntry": 14,
-      "fills": [
-        {
-          "price": 0.17,
-          "shares": 5.62,
-          "cost": 0.96
-        },
-        {
-          "price": 0.18,
-          "shares": 12,
-          "cost": 2.16
-        },
-        {
-          "price": 0.21,
-          "shares": 10,
-          "cost": 2.1
-        },
-        {
-          "price": 0.22,
-          "shares": 15,
-          "cost": 3.3
-        },
-        {
-          "price": 0.23,
-          "shares": 16.9,
-          "cost": 3.89
-        },
-        {
-          "price": 0.24,
-          "shares": 6.01,
-          "cost": 1.44
+          "cost": 2.5
         },
         {
           "price": 0.26,
-          "shares": 6,
-          "cost": 1.56
-        },
-        {
-          "price": 0.27,
-          "shares": 17,
-          "cost": 4.59
-        }
-      ],
-      "negativeEdgeCount": 0,
-      "adjacentLossCount": 1
-    },
-    {
-      "slug": "highest-temperature-in-shanghai-on-march-20-2026-13c",
-      "station": "Shanghai",
-      "date": "2026-03-20",
-      "dayName": "Friday",
-      "tempLabel": "13°C",
-      "k": 13,
-      "dir": "BUY_NO",
-      "entryPrice": 0.31,
-      "shares": 64,
-      "cost": 19.84,
-      "entryTime": "2026-03-19T13:05:05.348Z",
-      "modelPAtEntry": 0.383,
-      "yesPAtEntry": 0.695,
-      "noPAtEntry": 0.305,
-      "edgeAtEntry": 0.312,
-      "forecastMaxAtEntry": 13,
-      "muAtEntry": 13,
-      "fills": [
-        {
-          "price": 0.31,
-          "shares": 64,
-          "cost": 19.84
+          "shares": 67,
+          "cost": 17.42
         }
       ],
       "negativeEdgeCount": 0
-    },
-    {
-      "slug": "highest-temperature-in-toronto-on-march-20-2026-7c",
-      "station": "Toronto",
-      "date": "2026-03-20",
-      "dayName": "Friday",
-      "tempLabel": "7°C",
-      "k": 7,
-      "dir": "BUY_YES",
-      "entryPrice": 0.2009,
-      "shares": 98.6,
-      "cost": 19.81,
-      "entryTime": "2026-03-19T14:05:05.658Z",
-      "modelPAtEntry": 0.368,
-      "yesPAtEntry": 0.155,
-      "noPAtEntry": 0.845,
-      "edgeAtEntry": 0.213,
-      "forecastMaxAtEntry": 7,
-      "muAtEntry": 6.7,
-      "fills": [
-        {
-          "price": 0.18,
-          "shares": 19.24,
-          "cost": 3.46
-        },
-        {
-          "price": 0.19,
-          "shares": 38.48,
-          "cost": 7.31
-        },
-        {
-          "price": 0.22,
-          "shares": 36.88,
-          "cost": 8.11
-        },
-        {
-          "price": 0.23,
-          "shares": 4,
-          "cost": 0.92
-        }
-      ]
-    },
-    {
-      "slug": "highest-temperature-in-toronto-on-march-21-2026-6corhigher",
-      "station": "Toronto",
-      "date": "2026-03-21",
-      "dayName": "Saturday",
-      "tempLabel": "6°C or higher",
-      "k": 6,
-      "dir": "BUY_NO",
-      "entryPrice": 0.4,
-      "shares": 50,
-      "cost": 20,
-      "entryTime": "2026-03-19T14:05:05.658Z",
-      "modelPAtEntry": 0.369,
-      "yesPAtEntry": 0.635,
-      "noPAtEntry": 0.365,
-      "edgeAtEntry": 0.266,
-      "forecastMaxAtEntry": 5,
-      "muAtEntry": 5,
-      "fills": [
-        {
-          "price": 0.4,
-          "shares": 50,
-          "cost": 20
-        }
-      ]
     }
   ],
   "closedTrades": [
@@ -1486,15 +1318,725 @@
       "exitTime": "2026-03-19T12:05:04.942Z",
       "pnl": 3.81,
       "reason": "take_profit_edge_decay_40pct"
+    },
+    {
+      "slug": "highest-temperature-in-shanghai-on-march-21-2026-14c",
+      "station": "Shanghai",
+      "date": "2026-03-21",
+      "dayName": "Saturday",
+      "tempLabel": "14°C",
+      "k": 14,
+      "dir": "BUY_YES",
+      "entryPrice": 0.2259,
+      "shares": 88.53,
+      "cost": 19.99,
+      "entryTime": "2026-03-19T08:05:04.709Z",
+      "modelPAtEntry": 0.383,
+      "yesPAtEntry": 0.155,
+      "noPAtEntry": 0.845,
+      "edgeAtEntry": 0.228,
+      "forecastMaxAtEntry": 14,
+      "muAtEntry": 14,
+      "fills": [
+        {
+          "price": 0.17,
+          "shares": 5.62,
+          "cost": 0.96
+        },
+        {
+          "price": 0.18,
+          "shares": 12,
+          "cost": 2.16
+        },
+        {
+          "price": 0.21,
+          "shares": 10,
+          "cost": 2.1
+        },
+        {
+          "price": 0.22,
+          "shares": 15,
+          "cost": 3.3
+        },
+        {
+          "price": 0.23,
+          "shares": 16.9,
+          "cost": 3.89
+        },
+        {
+          "price": 0.24,
+          "shares": 6.01,
+          "cost": 1.44
+        },
+        {
+          "price": 0.26,
+          "shares": 6,
+          "cost": 1.56
+        },
+        {
+          "price": 0.27,
+          "shares": 17,
+          "cost": 4.59
+        }
+      ],
+      "negativeEdgeCount": 0,
+      "adjacentLossCount": 2,
+      "exitPrice": 0.177,
+      "exitTime": "2026-03-19T14:35:05.027Z",
+      "pnl": -4.32,
+      "reason": "stop_loss_adjacent_replacement_2x"
+    },
+    {
+      "slug": "highest-temperature-in-toronto-on-march-20-2026-6c",
+      "station": "Toronto",
+      "date": "2026-03-20",
+      "dayName": "Friday",
+      "tempLabel": "6°C",
+      "k": 6,
+      "dir": "BUY_YES",
+      "entryPrice": 0.2089,
+      "shares": 95.65,
+      "cost": 19.98,
+      "entryTime": "2026-03-19T04:02:06.881Z",
+      "modelPAtEntry": 0.42,
+      "yesPAtEntry": 0.155,
+      "noPAtEntry": 0.845,
+      "edgeAtEntry": 0.265,
+      "forecastMaxAtEntry": 7,
+      "muAtEntry": 6.4,
+      "fills": [
+        {
+          "price": 0.16,
+          "shares": 24.65,
+          "cost": 3.94
+        },
+        {
+          "price": 0.17,
+          "shares": 10,
+          "cost": 1.7
+        },
+        {
+          "price": 0.23,
+          "shares": 30,
+          "cost": 6.9
+        },
+        {
+          "price": 0.24,
+          "shares": 31,
+          "cost": 7.44
+        }
+      ],
+      "negativeEdgeCount": 0,
+      "adjacentLossCount": 0,
+      "exitPrice": 0.0306,
+      "exitTime": "2026-03-19T16:35:08.867Z",
+      "pnl": -17.05,
+      "reason": "stop_loss_extreme_price_yes5pct",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-toronto-on-march-20-2026-7c",
+      "station": "Toronto",
+      "date": "2026-03-20",
+      "dayName": "Friday",
+      "tempLabel": "7°C",
+      "k": 7,
+      "dir": "BUY_YES",
+      "entryPrice": 0.2009,
+      "shares": 98.6,
+      "cost": 19.81,
+      "entryTime": "2026-03-19T14:05:05.658Z",
+      "modelPAtEntry": 0.368,
+      "yesPAtEntry": 0.155,
+      "noPAtEntry": 0.845,
+      "edgeAtEntry": 0.213,
+      "forecastMaxAtEntry": 7,
+      "muAtEntry": 6.7,
+      "fills": [
+        {
+          "price": 0.18,
+          "shares": 19.24,
+          "cost": 3.46
+        },
+        {
+          "price": 0.19,
+          "shares": 38.48,
+          "cost": 7.31
+        },
+        {
+          "price": 0.22,
+          "shares": 36.88,
+          "cost": 8.11
+        },
+        {
+          "price": 0.23,
+          "shares": 4,
+          "cost": 0.92
+        }
+      ],
+      "adjacentLossCount": 0,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.1315,
+      "exitTime": "2026-03-19T18:35:06.831Z",
+      "pnl": -6.84,
+      "reason": "stop_loss_forecast_shift_2C",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-paris-on-march-21-2026-18corhigher",
+      "station": "Paris",
+      "date": "2026-03-21",
+      "dayName": "Saturday",
+      "tempLabel": "18°C or higher",
+      "k": 18,
+      "dir": "BUY_YES",
+      "entryPrice": 0.1861,
+      "shares": 107.24,
+      "cost": 19.95,
+      "entryTime": "2026-03-19T19:05:08.397Z",
+      "modelPAtEntry": 0.553,
+      "yesPAtEntry": 0.165,
+      "noPAtEntry": 0.835,
+      "edgeAtEntry": 0.388,
+      "forecastMaxAtEntry": 18,
+      "muAtEntry": 17.7,
+      "fills": [
+        {
+          "price": 0.17,
+          "shares": 72.41,
+          "cost": 12.31
+        },
+        {
+          "price": 0.21,
+          "shares": 23.83,
+          "cost": 5
+        },
+        {
+          "price": 0.24,
+          "shares": 11,
+          "cost": 2.64
+        }
+      ],
+      "negativeEdgeCount": 2,
+      "exitPrice": 0.1565,
+      "exitTime": "2026-03-19T22:05:05.005Z",
+      "pnl": -3.17,
+      "reason": "stop_loss_negative_edge_1pct_2x"
+    },
+    {
+      "slug": "highest-temperature-in-shanghai-on-march-20-2026-13c",
+      "station": "Shanghai",
+      "date": "2026-03-20",
+      "dayName": "Friday",
+      "tempLabel": "13°C",
+      "k": 13,
+      "dir": "BUY_NO",
+      "entryPrice": 0.31,
+      "shares": 32,
+      "cost": 9.92,
+      "entryTime": "2026-03-19T13:05:05.348Z",
+      "modelPAtEntry": 0.383,
+      "yesPAtEntry": 0.695,
+      "noPAtEntry": 0.305,
+      "edgeAtEntry": 0.312,
+      "forecastMaxAtEntry": 13,
+      "muAtEntry": 13,
+      "fills": [
+        {
+          "price": 0.31,
+          "shares": 64,
+          "cost": 19.84
+        }
+      ],
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.3131,
+      "exitTime": "2026-03-19T22:35:07.025Z",
+      "pnl": 0.1,
+      "reason": "time_tp_partial_settlement_day_6h"
+    },
+    {
+      "slug": "highest-temperature-in-shanghai-on-march-20-2026-13c",
+      "station": "Shanghai",
+      "date": "2026-03-20",
+      "dayName": "Friday",
+      "tempLabel": "13°C",
+      "k": 13,
+      "dir": "BUY_NO",
+      "entryPrice": 0.31,
+      "shares": 32,
+      "cost": 9.92,
+      "entryTime": "2026-03-19T13:05:05.348Z",
+      "modelPAtEntry": 0.383,
+      "yesPAtEntry": 0.695,
+      "noPAtEntry": 0.305,
+      "edgeAtEntry": 0.312,
+      "forecastMaxAtEntry": 13,
+      "muAtEntry": 13,
+      "fills": [
+        {
+          "price": 0.31,
+          "shares": 64,
+          "cost": 19.84
+        }
+      ],
+      "negativeEdgeCount": 0,
+      "partialTpDone": true,
+      "exitPrice": 0.6716,
+      "exitTime": "2026-03-20T02:35:12.493Z",
+      "pnl": 0.57,
+      "reason": "stop_loss_metar_confirmed_13C",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-seoul-on-march-21-2026-9c",
+      "station": "Seoul",
+      "date": "2026-03-21",
+      "dayName": "Saturday",
+      "tempLabel": "9°C",
+      "k": 9,
+      "dir": "BUY_YES",
+      "entryPrice": 0.1674,
+      "shares": 119,
+      "cost": 19.92,
+      "entryTime": "2026-03-20T01:05:07.564Z",
+      "modelPAtEntry": 0.368,
+      "yesPAtEntry": 0.13,
+      "noPAtEntry": 0.87,
+      "edgeAtEntry": 0.238,
+      "forecastMaxAtEntry": 9,
+      "muAtEntry": 8.7,
+      "fills": [
+        {
+          "price": 0.14,
+          "shares": 10,
+          "cost": 1.4
+        },
+        {
+          "price": 0.16,
+          "shares": 40,
+          "cost": 6.4
+        },
+        {
+          "price": 0.17,
+          "shares": 30,
+          "cost": 5.1
+        },
+        {
+          "price": 0.18,
+          "shares": 39,
+          "cost": 7.02
+        }
+      ],
+      "adjacentLossCount": 0,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.0699,
+      "exitTime": "2026-03-20T03:05:08.670Z",
+      "pnl": -11.6,
+      "reason": "stop_loss_extreme_price_yes9pct",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-toronto-on-march-20-2026-6c",
+      "station": "Toronto",
+      "date": "2026-03-20",
+      "dayName": "Friday",
+      "tempLabel": "6°C",
+      "k": 6,
+      "dir": "BUY_YES",
+      "entryPrice": 0.1527,
+      "shares": 130.49,
+      "cost": 19.92,
+      "entryTime": "2026-03-20T02:05:17.731Z",
+      "modelPAtEntry": 0.368,
+      "yesPAtEntry": 0.12,
+      "noPAtEntry": 0.88,
+      "edgeAtEntry": 0.248,
+      "forecastMaxAtEntry": 6,
+      "muAtEntry": 5.7,
+      "fills": [
+        {
+          "price": 0.14,
+          "shares": 15,
+          "cost": 2.1
+        },
+        {
+          "price": 0.15,
+          "shares": 65.49,
+          "cost": 9.82
+        },
+        {
+          "price": 0.16,
+          "shares": 50,
+          "cost": 8
+        }
+      ],
+      "adjacentLossCount": 0,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.1185,
+      "exitTime": "2026-03-20T04:05:05.622Z",
+      "pnl": -4.46,
+      "reason": "stop_loss_forecast_shift_3C",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-toronto-on-march-21-2026-6corhigher",
+      "station": "Toronto",
+      "date": "2026-03-21",
+      "dayName": "Saturday",
+      "tempLabel": "6°C or higher",
+      "k": 6,
+      "dir": "BUY_NO",
+      "entryPrice": 0.4,
+      "shares": 50,
+      "cost": 20,
+      "entryTime": "2026-03-19T14:05:05.658Z",
+      "modelPAtEntry": 0.369,
+      "yesPAtEntry": 0.635,
+      "noPAtEntry": 0.365,
+      "edgeAtEntry": 0.266,
+      "forecastMaxAtEntry": 5,
+      "muAtEntry": 5,
+      "fills": [
+        {
+          "price": 0.4,
+          "shares": 50,
+          "cost": 20
+        }
+      ],
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.6414,
+      "exitTime": "2026-03-20T04:05:05.622Z",
+      "pnl": -2.07,
+      "reason": "stop_loss_forecast_drift_1C_edge_thin"
+    },
+    {
+      "slug": "highest-temperature-in-paris-on-march-21-2026-18corhigher",
+      "station": "Paris",
+      "date": "2026-03-21",
+      "dayName": "Saturday",
+      "tempLabel": "18°C or higher",
+      "k": 18,
+      "dir": "BUY_YES",
+      "entryPrice": 0.2868,
+      "shares": 69.41,
+      "cost": 19.91,
+      "entryTime": "2026-03-20T00:05:07.877Z",
+      "modelPAtEntry": 0.58,
+      "yesPAtEntry": 0.265,
+      "noPAtEntry": 0.735,
+      "edgeAtEntry": 0.315,
+      "forecastMaxAtEntry": 18,
+      "muAtEntry": 17.7,
+      "fills": [
+        {
+          "price": 0.27,
+          "shares": 37.26,
+          "cost": 10.06
+        },
+        {
+          "price": 0.28,
+          "shares": 5,
+          "cost": 1.4
+        },
+        {
+          "price": 0.29,
+          "shares": 10,
+          "cost": 2.9
+        },
+        {
+          "price": 0.3,
+          "shares": 7.15,
+          "cost": 2.15
+        },
+        {
+          "price": 0.34,
+          "shares": 10,
+          "cost": 3.4
+        }
+      ],
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.112,
+      "exitTime": "2026-03-20T05:05:08.581Z",
+      "pnl": -12.14,
+      "reason": "stop_loss_drawdown_55pct",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-milan-on-march-21-2026-16corhigher",
+      "station": "Milan",
+      "date": "2026-03-21",
+      "dayName": "Saturday",
+      "tempLabel": "16°C or higher",
+      "k": 16,
+      "dir": "BUY_YES",
+      "entryPrice": 0.4028,
+      "shares": 48.19,
+      "cost": 19.41,
+      "entryTime": "2026-03-20T03:05:08.670Z",
+      "modelPAtEntry": 0.58,
+      "yesPAtEntry": 0.34,
+      "noPAtEntry": 0.66,
+      "edgeAtEntry": 0.24,
+      "forecastMaxAtEntry": 16,
+      "muAtEntry": 15.7,
+      "fills": [
+        {
+          "price": 0.36,
+          "shares": 6.94,
+          "cost": 2.5
+        },
+        {
+          "price": 0.41,
+          "shares": 41.25,
+          "cost": 16.91
+        }
+      ],
+      "negativeEdgeCount": 2,
+      "exitPrice": 0.3866,
+      "exitTime": "2026-03-20T06:35:07.840Z",
+      "pnl": -0.98,
+      "reason": "stop_loss_negative_edge_4pct_2x"
+    },
+    {
+      "slug": "highest-temperature-in-shanghai-on-march-21-2026-14c",
+      "station": "Shanghai",
+      "date": "2026-03-21",
+      "dayName": "Saturday",
+      "tempLabel": "14°C",
+      "k": 14,
+      "dir": "BUY_YES",
+      "entryPrice": 0.11,
+      "shares": 181,
+      "cost": 19.91,
+      "entryTime": "2026-03-20T10:05:13.846Z",
+      "modelPAtEntry": 0.383,
+      "yesPAtEntry": 0.101,
+      "noPAtEntry": 0.899,
+      "edgeAtEntry": 0.282,
+      "forecastMaxAtEntry": 14,
+      "muAtEntry": 14,
+      "fills": [
+        {
+          "price": 0.11,
+          "shares": 181,
+          "cost": 19.91
+        }
+      ],
+      "adjacentLossCount": 0,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.0749,
+      "exitTime": "2026-03-20T11:05:09.291Z",
+      "pnl": -6.35,
+      "reason": "stop_loss_extreme_price_yes9pct",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-london-on-march-21-2026-15c",
+      "station": "London",
+      "date": "2026-03-21",
+      "dayName": "Saturday",
+      "tempLabel": "15°C",
+      "k": 15,
+      "dir": "BUY_YES",
+      "entryPrice": 0.1782,
+      "shares": 112,
+      "cost": 19.96,
+      "entryTime": "2026-03-20T04:05:05.622Z",
+      "modelPAtEntry": 0.368,
+      "yesPAtEntry": 0.125,
+      "noPAtEntry": 0.875,
+      "edgeAtEntry": 0.243,
+      "forecastMaxAtEntry": 15,
+      "muAtEntry": 14.7,
+      "fills": [
+        {
+          "price": 0.14,
+          "shares": 10,
+          "cost": 1.4
+        },
+        {
+          "price": 0.16,
+          "shares": 10,
+          "cost": 1.6
+        },
+        {
+          "price": 0.17,
+          "shares": 34,
+          "cost": 5.78
+        },
+        {
+          "price": 0.18,
+          "shares": 16,
+          "cost": 2.88
+        },
+        {
+          "price": 0.19,
+          "shares": 10,
+          "cost": 1.9
+        },
+        {
+          "price": 0.2,
+          "shares": 32,
+          "cost": 6.4
+        }
+      ],
+      "adjacentLossCount": 0,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.1,
+      "exitTime": "2026-03-20T12:05:09.418Z",
+      "pnl": -8.76,
+      "reason": "stop_loss_extreme_price_yes10pct",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-lucknow-on-march-23-2026-31corbelow",
+      "station": "Lucknow",
+      "date": "2026-03-23",
+      "dayName": "Monday",
+      "tempLabel": "31°C or below",
+      "k": 31,
+      "dir": "BUY_YES",
+      "entryPrice": 0.4597,
+      "shares": 43.04,
+      "cost": 19.79,
+      "entryTime": "2026-03-20T22:05:06.928Z",
+      "modelPAtEntry": 0.631,
+      "yesPAtEntry": 0.32,
+      "noPAtEntry": 0.68,
+      "edgeAtEntry": 0.311,
+      "forecastMaxAtEntry": 31,
+      "muAtEntry": 31,
+      "fills": [
+        {
+          "price": 0.43,
+          "shares": 10.04,
+          "cost": 4.32
+        },
+        {
+          "price": 0.44,
+          "shares": 10,
+          "cost": 4.4
+        },
+        {
+          "price": 0.48,
+          "shares": 20,
+          "cost": 9.6
+        },
+        {
+          "price": 0.49,
+          "shares": 3,
+          "cost": 1.47
+        }
+      ],
+      "negativeEdgeCount": 1,
+      "exitPrice": 0.2219,
+      "exitTime": "2026-03-20T23:05:04.342Z",
+      "pnl": -10.24,
+      "reason": "stop_loss_model_flip_11pct"
+    },
+    {
+      "slug": "highest-temperature-in-lucknow-on-march-23-2026-31corbelow",
+      "station": "Lucknow",
+      "date": "2026-03-23",
+      "dayName": "Monday",
+      "tempLabel": "31°C or below",
+      "k": 31,
+      "dir": "BUY_YES",
+      "entryPrice": 0.4532,
+      "shares": 43.56,
+      "cost": 19.74,
+      "entryTime": "2026-03-20T23:05:04.342Z",
+      "modelPAtEntry": 0.631,
+      "yesPAtEntry": 0.375,
+      "noPAtEntry": 0.625,
+      "edgeAtEntry": 0.256,
+      "forecastMaxAtEntry": 31,
+      "muAtEntry": 31,
+      "fills": [
+        {
+          "price": 0.42,
+          "shares": 9.87,
+          "cost": 4.15
+        },
+        {
+          "price": 0.43,
+          "shares": 6.69,
+          "cost": 2.88
+        },
+        {
+          "price": 0.44,
+          "shares": 6,
+          "cost": 2.64
+        },
+        {
+          "price": 0.48,
+          "shares": 21,
+          "cost": 10.08
+        }
+      ],
+      "exitPrice": 0.2798,
+      "exitTime": "2026-03-20T23:35:07.901Z",
+      "pnl": -7.55,
+      "reason": "stop_loss_model_flip_11pct"
+    },
+    {
+      "slug": "highest-temperature-in-lucknow-on-march-23-2026-31corbelow",
+      "station": "Lucknow",
+      "date": "2026-03-23",
+      "dayName": "Monday",
+      "tempLabel": "31°C or below",
+      "k": 31,
+      "dir": "BUY_YES",
+      "entryPrice": 0.4434,
+      "shares": 44.96,
+      "cost": 19.93,
+      "entryTime": "2026-03-21T00:05:04.216Z",
+      "modelPAtEntry": 0.631,
+      "yesPAtEntry": 0.37,
+      "noPAtEntry": 0.63,
+      "edgeAtEntry": 0.261,
+      "forecastMaxAtEntry": 31,
+      "muAtEntry": 31,
+      "fills": [
+        {
+          "price": 0.41,
+          "shares": 9.7,
+          "cost": 3.98
+        },
+        {
+          "price": 0.42,
+          "shares": 6.57,
+          "cost": 2.76
+        },
+        {
+          "price": 0.43,
+          "shares": 6.69,
+          "cost": 2.88
+        },
+        {
+          "price": 0.44,
+          "shares": 6,
+          "cost": 2.64
+        },
+        {
+          "price": 0.48,
+          "shares": 16,
+          "cost": 7.68
+        }
+      ],
+      "exitPrice": 0.2311,
+      "exitTime": "2026-03-21T00:35:09.178Z",
+      "pnl": -9.54,
+      "reason": "stop_loss_model_flip_16pct"
     }
   ],
-  "totalPnl": -59.38,
+  "totalPnl": -163.78205099999997,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-19T14:29:08.599Z",
+  "updatedAt": "2026-03-21T03:05:09.935Z",
   "rules": {
     "maxPositionPct": 0.15,
     "maxSingleTrade": 20,
-    "minEdge": 0.2,
+    "minEdge": 0.15,
     "sellEdgeReverse": 0.2,
     "stopLossConditions": [
       "forecast_shift_2c",
@@ -1507,12 +2049,5 @@
     "scanIntervalMin": 60,
     "strategy": "buy_early_sell_before_settlement"
   },
-  "stoppedToday": {
-    "2026-03-19:highest-temperature-in-seoul-on-march-20-2026-9c": "2026-03-19T03:35:04.689Z",
-    "2026-03-19:highest-temperature-in-dallas-on-march-20-2026-90-91f": "2026-03-19T05:05:04.813Z",
-    "2026-03-19:highest-temperature-in-seoul-on-march-21-2026-9c": "2026-03-19T06:05:04.527Z",
-    "2026-03-19:highest-temperature-in-milan-on-march-21-2026-15c": "2026-03-19T09:35:04.910Z",
-    "2026-03-19:highest-temperature-in-milan-on-march-21-2026-16corhigher": "2026-03-19T12:05:04.942Z",
-    "2026-03-19:highest-temperature-in-paris-on-march-20-2026-18c": "2026-03-19T12:05:04.942Z"
-  }
+  "stoppedToday": {}
 }

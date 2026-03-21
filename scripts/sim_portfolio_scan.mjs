@@ -256,7 +256,13 @@ async function main(){
     if(now.getTime() - ts > cooldownMs) delete pf.stoppedToday[key];
   }
 
-  actions.push(`🎲 模拟盘扫描 | ${now.toISOString()} | 资金$${pf.cash.toFixed(2)}/${pf.initialCapital} | 模式:${SCAN_MODE}`);
+  // ─── 单日回撤控制：当日已实现亏损超过总仓位10%则暂停建仓 ───
+  const todayClosedPnl = (pf.closedTrades||[]).filter(t=>(t.exitTime||'').startsWith(todayStr)).reduce((s,t)=>s+Number(t.pnl||0),0);
+  const totalPortfolioValue = pf.initialCapital; // 以初始资金为基准
+  const maxDailyLoss = totalPortfolioValue * 0.10;
+  const dailyLossBreached = todayClosedPnl < -maxDailyLoss;
+
+  actions.push(`🎲 模拟盘扫描 | ${now.toISOString()} | 资金$${pf.cash.toFixed(2)}/${pf.initialCapital} | 模式:${SCAN_MODE}${dailyLossBreached?' ⛔当日回撤已达上限':''}${OBSERVE_ONLY?' 👁️观察':''}`);
   if(pf.positions.length) actions.push(`📦 持仓${pf.positions.length}个`);
 
   // ─── Phase 1: Check existing positions for SELL/STOP-LOSS ───
@@ -361,8 +367,10 @@ async function main(){
         }
 
         // ─── 硬止损 B: 盘口极端化 (BUY_NO but Yes>90%, or BUY_YES but Yes<10%) ───
+        // 只在预报也支持时触发；如果预报未变，视为市场噪音，不止损
         const extremeStop = (pos.dir==='BUY_NO' && currentYesP > 0.90) || (pos.dir==='BUY_YES' && currentYesP < 0.10);
-        if(extremeStop){
+        const forecastShiftForExtreme = Math.abs(fMax - (pos.forecastMaxAtEntry || fMax));
+        if(extremeStop && forecastShiftForExtreme >= 1){
           const slBook2 = pos.dir==='BUY_YES' ? ba : baNo;
           const slSide2 = 'bid';
           const slBudget2 = pos.shares * (pos.dir==='BUY_YES' ? (ba.bestBid||currentYesP||0.01) : (baNo.bestBid||currentNoP||0.01));
@@ -380,8 +388,11 @@ async function main(){
           pf.closedTrades.push({...pos, exitPrice:exitPrice2, exitTime:now.toISOString(), pnl:Math.round(realPnl2*100)/100, reason:`stop_loss_extreme_price_yes${Math.round(currentYesP*100)}pct`, orderType:'市价(强制)'});
           pf.stoppedToday[pos.slug] = now.toISOString();
           pf.positions.splice(pi,1);
-          actions.push(`🚨 止损(盘口极端): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | Yes已到${(currentYesP*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitVal2.toFixed(2)} PnL=$${realPnl2.toFixed(2)}`);
+          actions.push(`🚨 止损(盘口极端+预报偏移): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | Yes已到${(currentYesP*100).toFixed(1)}% 预报偏移${forecastShiftForExtreme}°C | 成本$${pos.cost.toFixed(2)} 回收$${exitVal2.toFixed(2)} PnL=$${realPnl2.toFixed(2)}`);
           continue;
+        }
+        if(extremeStop && forecastShiftForExtreme < 1){
+          actions.push(`⚠️ 盘口极端但预报未变: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | Yes=${(currentYesP*100).toFixed(1)}% 预报偏移${forecastShiftForExtreme}°C → 视为市场噪音，不止损`);
         }
 
         // ─── 硬止损 C: METAR实测已达到对赌阈值 ───
@@ -780,6 +791,9 @@ async function main(){
   }
 
   // ─── Phase 2: Scan for new BUY opportunities ────────────
+  if(dailyLossBreached && !OBSERVE_ONLY){
+    actions.push(`\n⛔ 当日已实现亏损$${Math.abs(todayClosedPnl).toFixed(2)} 超过上限$${maxDailyLoss.toFixed(2)}(总仓位10%), 暂停新建仓`);
+  }
   const heldStationNames = new Set(pf.positions.map(p => p.station));
   const targetScanDates = new Set();
   if(SCAN_MODE === 'full'){
@@ -1037,8 +1051,8 @@ async function main(){
           ?`模型${(modelP*100).toFixed(1)}%远高于盘口${(yesP*100).toFixed(1)}%`
           :`模型${(modelP*100).toFixed(1)}%远低于盘口${(yesP*100).toFixed(1)}%`;
 
-        if(OBSERVE_ONLY){
-          // 纯观察模式：只记录信号，不实际建仓
+        if(OBSERVE_ONLY || dailyLossBreached){
+          // 纯观察模式 或 当日回撤已达上限：只记录信号，不实际建仓
           actions.push(`\n👁️ [观察] 信号: ${st.name} ${date}(${dayName}) ${title} ${dir}`);
           actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}%`);
           actions.push(`   📊 天气: 风${wind}km/h 降水${precip}mm 云${cloud}% 湿度${humid}%`);
