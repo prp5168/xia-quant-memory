@@ -245,12 +245,14 @@ async function main(){
   const rules=pf.rules;
   const actions=[]; // will be output as notifications
 
-  // Initialize stoppedToday tracker (resets daily)
+  // Initialize stopped tracker (24-hour rolling cooldown)
   if(!pf.stoppedToday) pf.stoppedToday = {};
   const todayStr = now.toISOString().slice(0,10);
-  // Clean old entries (only keep today's)
+  const cooldownMs = 24 * 60 * 60 * 1000; // 24 hours
+  // Clean entries older than 24 hours
   for(const key of Object.keys(pf.stoppedToday)){
-    if(!key.startsWith(todayStr)) delete pf.stoppedToday[key];
+    const ts = new Date(pf.stoppedToday[key]).getTime();
+    if(now.getTime() - ts > cooldownMs) delete pf.stoppedToday[key];
   }
 
   actions.push(`🎲 模拟盘扫描 | ${now.toISOString()} | 资金$${pf.cash.toFixed(2)}/${pf.initialCapital} | 模式:${SCAN_MODE}`);
@@ -351,7 +353,7 @@ async function main(){
           pf.cash+=exitVal;
           pf.totalPnl+=realPnl;
           pf.closedTrades.push({...pos, exitPrice, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:`stop_loss_forecast_shift_${forecastShift}C`, orderType:'市价(强制)'});
-          pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+          pf.stoppedToday[pos.slug] = now.toISOString();
           pf.positions.splice(pi,1);
           actions.push(`🚨 止损(市价): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 预报偏移${forecastShift}°C | 成交@${(exitPrice*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitVal.toFixed(2)} PnL=$${realPnl.toFixed(2)}`);
           continue;
@@ -375,7 +377,7 @@ async function main(){
           pf.cash+=exitVal2;
           pf.totalPnl+=realPnl2;
           pf.closedTrades.push({...pos, exitPrice:exitPrice2, exitTime:now.toISOString(), pnl:Math.round(realPnl2*100)/100, reason:`stop_loss_extreme_price_yes${Math.round(currentYesP*100)}pct`, orderType:'市价(强制)'});
-          pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+          pf.stoppedToday[pos.slug] = now.toISOString();
           pf.positions.splice(pi,1);
           actions.push(`🚨 止损(盘口极端): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | Yes已到${(currentYesP*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitVal2.toFixed(2)} PnL=$${realPnl2.toFixed(2)}`);
           continue;
@@ -407,7 +409,7 @@ async function main(){
               pf.cash+=exitVal3;
               pf.totalPnl+=realPnl3;
               pf.closedTrades.push({...pos, exitPrice:exitPrice3, exitTime:now.toISOString(), pnl:Math.round(realPnl3*100)/100, reason:`stop_loss_metar_confirmed_${metarMax}C`, orderType:'市价(强制)'});
-              pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+              pf.stoppedToday[pos.slug] = now.toISOString();
               pf.positions.splice(pi,1);
               actions.push(`🚨 止损(METAR确认): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | METAR已测到${metarMax}°C | 成本$${pos.cost.toFixed(2)} 回收$${exitVal3.toFixed(2)} PnL=$${realPnl3.toFixed(2)}`);
               continue;
@@ -437,7 +439,7 @@ async function main(){
             pf.cash+=exitVal4;
             pf.totalPnl+=realPnl4;
             pf.closedTrades.push({...pos, exitPrice:exitPrice4, exitTime:now.toISOString(), pnl:Math.round(realPnl4*100)/100, reason:`stop_loss_drawdown_${Math.round(drawdown*100)}pct`, orderType:'市价(强制)'});
-            pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+            pf.stoppedToday[pos.slug] = now.toISOString();
             pf.positions.splice(pi,1);
             actions.push(`🚨 止损(浮亏${Math.round(drawdown*100)}%): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 成本$${pos.cost.toFixed(2)} 现值$${currentVal.toFixed(2)} 回收$${exitVal4.toFixed(2)} PnL=$${realPnl4.toFixed(2)}`);
             continue;
@@ -466,7 +468,7 @@ async function main(){
         pf.cash += exitValE;
         pf.totalPnl += realPnlE;
         pf.closedTrades.push({...pos, exitPrice:exitPriceE, exitTime:now.toISOString(), pnl:Math.round(realPnlE*100)/100, reason:`stop_loss_forecast_drift_${fShift1}C_edge_thin`});
-        pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+        pf.stoppedToday[pos.slug] = now.toISOString();
         pf.positions.splice(pi,1);
         actions.push(`🚨 止损(预报漂移+edge薄): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 预报偏移${fShift1}°C edge=${(prelimEdge*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitValE.toFixed(2)} PnL=$${realPnlE.toFixed(2)}`);
         continue;
@@ -543,7 +545,7 @@ async function main(){
           pf.cash += exitValA;
           pf.totalPnl += realPnlA;
           pf.closedTrades.push({...pos, exitPrice:exitPriceA, exitTime:now.toISOString(), pnl:Math.round(realPnlA*100)/100, reason:'stop_loss_adjacent_replacement_2x'});
-          pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+          pf.stoppedToday[pos.slug] = now.toISOString();
           pf.positions.splice(pi,1);
           actions.push(`🚨 止损(相邻档替代): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | ${adjacentStopNote} | 成本$${pos.cost.toFixed(2)} 回收$${exitValA.toFixed(2)} PnL=$${realPnlA.toFixed(2)}`);
           continue;
@@ -575,7 +577,7 @@ async function main(){
       pf.cash += exitValN;
       pf.totalPnl += realPnlN;
       pf.closedTrades.push({...pos, exitPrice:exitPriceN, exitTime:now.toISOString(), pnl:Math.round(realPnlN*100)/100, reason:`stop_loss_negative_edge_${Math.round((-currentEdge)*100)}pct_${pos.negativeEdgeCount||1}x`});
-      pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+      pf.stoppedToday[pos.slug] = now.toISOString();
       pf.positions.splice(pi,1);
       actions.push(`🚨 止损(edge转负): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 当前edge=${(currentEdge*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitValN.toFixed(2)} PnL=$${realPnlN.toFixed(2)}`);
       continue;
@@ -693,7 +695,7 @@ async function main(){
         pf.cash += exitVal0;
         pf.totalPnl += realPnl0;
         pf.closedTrades.push({...pos, exitPrice:exitPrice0, exitTime:now.toISOString(), pnl:Math.round(realPnl0*100)/100, reason:'take_profit_edge_decay_40pct'});
-        pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+        pf.stoppedToday[pos.slug] = now.toISOString();
         pf.positions.splice(pi,1);
         actions.push(`🎯 止盈(edge衰减): ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 入场edge=${(initialEdge*100).toFixed(1)}% 当前edge=${(currentEdge*100).toFixed(1)}% | PnL=$${realPnl0.toFixed(2)}`);
         continue;
@@ -724,7 +726,7 @@ async function main(){
         pf.cash+=exitVal;
         pf.totalPnl+=realPnl;
         pf.closedTrades.push({...pos, exitPrice, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:'take_profit_60pct_edge_captured'});
-        pf.stoppedToday[`${todayStr}:${pos.slug}`] = now.toISOString();
+        pf.stoppedToday[pos.slug] = now.toISOString();
         pf.positions.splice(pi,1);
         actions.push(`🎯 止盈: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 已吃到${Math.round(priceMove/initialEdge*100)}%的edge | 成交@${(exitPrice*100).toFixed(1)}% | PnL=$${realPnl.toFixed(2)}`);
         continue;
@@ -937,7 +939,7 @@ async function main(){
         }
 
         // ─── 鱼身v2: 止损/平仓后当天禁止重入 ───
-        if(pf.stoppedToday[`${todayStr}:${mkt.slug}`]){
+        if(pf.stoppedToday[mkt.slug]){
           actions.push(`   ⛔ 禁止重入 ${st.name} ${date} ${title} ${dir}: 今天已平过该标的`);
           continue;
         }
