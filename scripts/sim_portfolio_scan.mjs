@@ -245,6 +245,7 @@ async function main(){
   const pf=JSON.parse(await readFile(PORTFOLIO_PATH,'utf8'));
   const rules=pf.rules;
   const actions=[]; // will be output as notifications
+  const observeSnapshots=[]; // 概率路径观察记录
 
   // Initialize stopped tracker (24-hour rolling cooldown)
   if(!pf.stoppedToday) pf.stoppedToday = {};
@@ -798,7 +799,7 @@ async function main(){
   const targetScanDates = new Set();
   if(SCAN_MODE === 'full'){
     for(const st of STATIONS.slice(0,1)){
-      for(let i=1;i<3;i++){
+      for(let i=0;i<2;i++){  // 今天(0) + 明天(1)，不再扫后天
         const d = (() => {
           const nowLocal = new Date(now.getTime() + st.utcOffset * 3600000);
           nowLocal.setUTCHours(0,0,0,0);
@@ -853,9 +854,9 @@ async function main(){
 
     // Determine which days to scan for NEW positions
     // today-only mode: no new buys at all (only position checks above)
-    // full mode: skip day 0 (today), only scan day 1+ (tomorrow, day-after)
-    const scanStartDay = SCAN_MODE === 'today-only' ? 999 : 1; // today-only → skip all new buys
-    const scanEndDay = SCAN_MODE === 'today-only' ? 0 : 3;
+    // full mode: scan day 0 (today, observe only) + day 1 (tomorrow), no day-after
+    const scanStartDay = SCAN_MODE === 'today-only' ? 999 : 0; // today-only → skip all new buys
+    const scanEndDay = SCAN_MODE === 'today-only' ? 0 : 2;
 
     if(SCAN_MODE === 'today-only'){
       actions.push(`\n🔍 ${st.name}: 加密扫描模式, 仅监控持仓止损/止盈, 不建新仓`);
@@ -870,11 +871,9 @@ async function main(){
       const isHeldCity = heldStationNames.has(st.name);
       if(SCAN_MODE === 'full' && !isHeldCity && !topForDate.some(x => x.name === st.name)) continue;
 
-      // Fish-body hard rule: never open new positions on the station's local "today"
+      // Fish-body hard rule: today's markets are observe-only (never real buy)
       const localToday = getLocalDateStr(st.utcOffset);
-      if(date === localToday) {
-        continue;
-      }
+      const isTodayMarket = (date === localToday);
 
       const hTemps=[];
       for(let h=0;h<(hourly.validTimeLocal||[]).length;h++){
@@ -899,6 +898,34 @@ async function main(){
       if(!event?.markets?.length) continue;
 
       let dayScanned=0, dayMaxEdge=0, dayMaxEdgeLabel='';
+
+      // ─── 概率路径观察记录：forecastMax ±2度 共5档 ───
+      {
+        const centerK = Math.round(forecastMax);
+        const bins = {};
+        for(let k=centerK-2; k<=centerK+2; k++){
+          const modelProb = dist[k] || 0;
+          // 查盘口
+          const binMkt = event.markets.find(m=>{
+            if(m.closed) return false;
+            const tm=(m.groupItemTitle||'').match(/(\d+)/);
+            return tm && Number(tm[1])===k && isExactTempTitle(m.groupItemTitle||'');
+          });
+          let marketYes = null;
+          if(binMkt){ try{ const px=JSON.parse(binMkt.outcomePrices||'[]'); marketYes=Number(px[0]||0); }catch{} }
+          bins[k] = { model: Math.round(modelProb*1000)/1000, market: marketYes!=null ? Math.round(marketYes*1000)/1000 : null };
+        }
+        observeSnapshots.push({
+          ts: now.toISOString(),
+          city: st.name,
+          date,
+          forecastMax,
+          mu: Math.round(mu*10)/10,
+          sigma,
+          isToday: isTodayMarket,
+          bins
+        });
+      }
 
       const exactMarkets = event.markets.filter(m=>!m.closed && isExactTempTitle(m.groupItemTitle||''));
       let peakK = null;
@@ -1051,7 +1078,7 @@ async function main(){
           ?`模型${(modelP*100).toFixed(1)}%远高于盘口${(yesP*100).toFixed(1)}%`
           :`模型${(modelP*100).toFixed(1)}%远低于盘口${(yesP*100).toFixed(1)}%`;
 
-        if(OBSERVE_ONLY || dailyLossBreached){
+        if(OBSERVE_ONLY || dailyLossBreached || isTodayMarket){
           // 纯观察模式 或 当日回撤已达上限：只记录信号，不实际建仓
           actions.push(`\n👁️ [观察] 信号: ${st.name} ${date}(${dayName}) ${title} ${dir}`);
           actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}%`);
@@ -1087,6 +1114,13 @@ async function main(){
       for(const ds of cityDaySummaries) actions.push(`   ${ds}`);
       if(cityMaxEdge>0) actions.push(`   最接近的机会: ${cityMaxEdgeLabel}`);
     }
+  }
+
+  // ─── Save observe snapshots ──────────────────────────────
+  if(observeSnapshots.length > 0){
+    const { appendFile } = await import('node:fs/promises');
+    const logLines = observeSnapshots.map(s => JSON.stringify(s)).join('\n') + '\n';
+    await appendFile('data/observe-log.jsonl', logLines, 'utf8');
   }
 
   // ─── Save & Output ──────────────────────────────────────

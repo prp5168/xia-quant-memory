@@ -1,40 +1,7 @@
 {
   "initialCapital": 400,
-  "cash": 216.300256,
-  "positions": [
-    {
-      "slug": "highest-temperature-in-warsaw-on-march-22-2026-15corhigher",
-      "station": "Warsaw",
-      "date": "2026-03-22",
-      "dayName": "Sunday",
-      "tempLabel": "15°C or higher",
-      "k": 15,
-      "dir": "BUY_YES",
-      "entryPrice": 0.2587,
-      "shares": 77,
-      "cost": 19.92,
-      "entryTime": "2026-03-20T02:05:17.731Z",
-      "modelPAtEntry": 0.553,
-      "yesPAtEntry": 0.235,
-      "noPAtEntry": 0.765,
-      "edgeAtEntry": 0.318,
-      "forecastMaxAtEntry": 15,
-      "muAtEntry": 14.7,
-      "fills": [
-        {
-          "price": 0.25,
-          "shares": 10,
-          "cost": 2.5
-        },
-        {
-          "price": 0.26,
-          "shares": 67,
-          "cost": 17.42
-        }
-      ],
-      "negativeEdgeCount": 0
-    }
-  ],
+  "cash": 237.17495599999998,
+  "positions": [],
   "closedTrades": [
     {
       "slug": "highest-temperature-in-seoul-on-march-18-2026-7c",
@@ -2028,11 +1995,47 @@
       "exitTime": "2026-03-21T00:35:09.178Z",
       "pnl": -9.54,
       "reason": "stop_loss_model_flip_16pct"
+    },
+    {
+      "slug": "highest-temperature-in-warsaw-on-march-22-2026-15corhigher",
+      "station": "Warsaw",
+      "date": "2026-03-22",
+      "dayName": "Sunday",
+      "tempLabel": "15°C or higher",
+      "k": 15,
+      "dir": "BUY_YES",
+      "entryPrice": 0.2587,
+      "shares": 77,
+      "cost": 19.92,
+      "entryTime": "2026-03-20T02:05:17.731Z",
+      "modelPAtEntry": 0.553,
+      "yesPAtEntry": 0.235,
+      "noPAtEntry": 0.765,
+      "edgeAtEntry": 0.318,
+      "forecastMaxAtEntry": 15,
+      "muAtEntry": 14.7,
+      "fills": [
+        {
+          "price": 0.25,
+          "shares": 10,
+          "cost": 2.5
+        },
+        {
+          "price": 0.26,
+          "shares": 67,
+          "cost": 17.42
+        }
+      ],
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.2711,
+      "exitTime": "2026-03-21T08:05:13.287Z",
+      "pnl": 0.95,
+      "reason": "take_profit_edge_decay_40pct"
     }
   ],
-  "totalPnl": -163.78205099999997,
+  "totalPnl": -162.82735099999996,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-21T03:05:09.935Z",
+  "updatedAt": "2026-03-21T11:05:13.147Z",
   "rules": {
     "maxPositionPct": 0.15,
     "maxSingleTrade": 20,
@@ -2049,5 +2052,7 @@
     "scanIntervalMin": 60,
     "strategy": "buy_early_sell_before_settlement"
   },
-  "stoppedToday": {}
+  "stoppedToday": {
+    "highest-temperature-in-warsaw-on-march-22-2026-15corhigher": "2026-03-21T08:05:13.287Z"
+  }
 }
