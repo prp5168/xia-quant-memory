@@ -2035,7 +2035,7 @@
   ],
   "totalPnl": -162.82735099999996,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-21T11:05:13.147Z",
+  "updatedAt": "2026-03-21T16:50:27.899Z",
   "rules": {
     "maxPositionPct": 0.15,
     "maxSingleTrade": 20,

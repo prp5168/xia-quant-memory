@@ -1,0 +1,180 @@
+{
+  "initialCapital": 400,
+  "oldTotalPnl": 301,
+  "correctedTotalPnl": -14.45,
+  "oldFinalCash": 641.36,
+  "correctedFinalCash": 385.55,
+  "overstatement": 315.45,
+  "correctedTrades": [
+    {
+      "station": "Seoul",
+      "date": "2026-03-18",
+      "label": "7°C",
+      "dir": "BUY_NO",
+      "oldPnl": 12.31,
+      "correctedPnl": 4.58,
+      "note": "recomputed_buy_no",
+      "reason": "take_profit_60pct_edge_captured"
+    },
+    {
+      "station": "Seoul",
+      "date": "2026-03-18",
+      "label": "8°C",
+      "dir": "BUY_YES",
+      "oldPnl": 52.71,
+      "correctedPnl": 52.71,
+      "note": "unchanged",
+      "reason": "sell_edge_reversed_66pct"
+    },
+    {
+      "station": "Seoul",
+      "date": "2026-03-18",
+      "label": "8°C",
+      "dir": "BUY_NO",
+      "oldPnl": -14.26,
+      "correctedPnl": -14.2,
+      "note": "recomputed_buy_no",
+      "reason": "stop_loss_extreme_price_yes100pct"
+    },
+    {
+      "station": "Seoul",
+      "date": "2026-03-19",
+      "label": "7°C",
+      "dir": "BUY_YES",
+      "oldPnl": -4.98,
+      "correctedPnl": -4.98,
+      "note": "unchanged",
+      "reason": "stop_loss_extreme_price_yes10pct"
+    },
+    {
+      "station": "Shanghai",
+      "date": "2026-03-19",
+      "label": "12°C",
+      "dir": "BUY_NO",
+      "oldPnl": -6.08,
+      "correctedPnl": -2.47,
+      "note": "recomputed_buy_no",
+      "reason": "stop_loss_drawdown_52pct"
+    },
+    {
+      "station": "Shanghai",
+      "date": "2026-03-19",
+      "label": "12°C",
+      "dir": "BUY_NO",
+      "oldPnl": -5.74,
+      "correctedPnl": -0.93,
+      "note": "recomputed_buy_no",
+      "reason": "stop_loss_drawdown_56pct"
+    },
+    {
+      "station": "Seoul",
+      "date": "2026-03-19",
+      "label": "10°C",
+      "dir": "BUY_NO",
+      "oldPnl": 45.39,
+      "correctedPnl": -0.1,
+      "note": "recomputed_buy_no",
+      "reason": "time_tp_settlement_day_6h"
+    },
+    {
+      "station": "Seoul",
+      "date": "2026-03-19",
+      "label": "9°C",
+      "dir": "BUY_NO",
+      "oldPnl": 22.39,
+      "correctedPnl": -0.93,
+      "note": "recomputed_buy_no",
+      "reason": "time_tp_settlement_day_6h"
+    },
+    {
+      "station": "Shanghai",
+      "date": "2026-03-19",
+      "label": "11°C",
+      "dir": "BUY_YES",
+      "oldPnl": -10.43,
+      "correctedPnl": -10.43,
+      "note": "unchanged",
+      "reason": "stop_loss_extreme_price_yes9pct"
+    },
+    {
+      "station": "London",
+      "date": "2026-03-19",
+      "label": "18°C",
+      "dir": "BUY_YES",
+      "oldPnl": -7.17,
+      "correctedPnl": -7.17,
+      "note": "unchanged",
+      "reason": "stop_loss_extreme_price_yes10pct"
+    },
+    {
+      "station": "London",
+      "date": "2026-03-20",
+      "label": "14°C",
+      "dir": "BUY_YES",
+      "oldPnl": -6.3,
+      "correctedPnl": -6.3,
+      "note": "unchanged",
+      "reason": "manual_close_all"
+    },
+    {
+      "station": "Shanghai",
+      "date": "2026-03-21",
+      "label": "14°C",
+      "dir": "BUY_YES",
+      "oldPnl": -1.96,
+      "correctedPnl": -1.96,
+      "note": "unchanged",
+      "reason": "manual_close_all"
+    },
+    {
+      "station": "Seoul",
+      "date": "2026-03-21",
+      "label": "9°C",
+      "dir": "BUY_YES",
+      "oldPnl": -10.53,
+      "correctedPnl": -10.53,
+      "note": "unchanged",
+      "reason": "manual_close_all"
+    },
+    {
+      "station": "Milan",
+      "date": "2026-03-19",
+      "label": "18°C or higher",
+      "dir": "BUY_YES",
+      "oldPnl": -1.4,
+      "correctedPnl": -1.4,
+      "note": "unchanged",
+      "reason": "manual_close_all"
+    },
+    {
+      "station": "Seoul",
+      "date": "2026-03-20",
+      "label": "12°C",
+      "dir": "BUY_NO",
+      "oldPnl": 187.45,
+      "correctedPnl": -2.64,
+      "note": "recomputed_buy_no",
+      "reason": "manual_close_all"
+    },
+    {
+      "station": "Seoul",
+      "date": "2026-03-20",
+      "label": "9°C",
+      "dir": "BUY_YES",
+      "oldPnl": -5.61,
+      "correctedPnl": -5.61,
+      "note": "unchanged",
+      "reason": "manual_close_all"
+    },
+    {
+      "station": "Seoul",
+      "date": "2026-03-20",
+      "label": "11°C",
+      "dir": "BUY_NO",
+      "oldPnl": 55.22,
+      "correctedPnl": -2.09,
+      "note": "recomputed_buy_no",
+      "reason": "manual_close_all"
+    }
+  ]
+}

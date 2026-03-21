@@ -820,25 +820,29 @@ async function main(){
     actions.push(`\n⛔ 当日已实现亏损$${Math.abs(todayClosedPnl).toFixed(2)} 超过上限$${maxDailyLoss.toFixed(2)}(总仓位10%), 暂停新建仓`);
   }
   const heldStationNames = new Set(pf.positions.map(p => p.station));
+  // Build per-station scan dates (each city uses its own timezone)
+  const stationScanDates = {};  // { stationName: [date0, date1] }
   const targetScanDates = new Set();
   if(SCAN_MODE === 'full'){
-    for(const st of STATIONS.slice(0,1)){
-      for(let i=0;i<2;i++){  // 今天(0) + 明天(1)，不再扫后天
-        const d = (() => {
-          const nowLocal = new Date(now.getTime() + st.utcOffset * 3600000);
-          nowLocal.setUTCHours(0,0,0,0);
-          nowLocal.setUTCDate(nowLocal.getUTCDate() + i);
-          return nowLocal.toISOString().slice(0,10);
-        })();
+    for(const st of STATIONS){
+      const dates = [];
+      for(let i=0;i<2;i++){  // 今天(0) + 明天(1)
+        const nowLocal = new Date(now.getTime() + st.utcOffset * 3600000);
+        nowLocal.setUTCHours(0,0,0,0);
+        nowLocal.setUTCDate(nowLocal.getUTCDate() + i);
+        const d = nowLocal.toISOString().slice(0,10);
+        dates.push(d);
         targetScanDates.add(d);
       }
-      break;
+      stationScanDates[st.name] = dates;
     }
   }
 
   // ─── Watchlist: load, prune settled dates, merge ─────────
   let watchlist = await loadWatchlist();
-  const localTodayForWL = getLocalDateStr(STATIONS[0].utcOffset);
+  // Prune: use earliest timezone's today (UTC+13 Wellington = most advanced clock)
+  const latestTZ = Math.max(...STATIONS.map(s=>s.utcOffset));
+  const localTodayForWL = getLocalDateStr(latestTZ);
   watchlist = pruneWatchlist(watchlist, localTodayForWL);
 
   const topStationsByDate = {};
@@ -922,7 +926,9 @@ async function main(){
       if(!date) continue;
       const topForDate = topStationsByDate[date] || [];
       const isHeldCity = heldStationNames.has(st.name);
-      if(SCAN_MODE === 'full' && !isHeldCity && !topForDate.some(x => x.name === st.name)) continue;
+      const isOnWatchlist = watchlist.some(w => w.city === st.name && w.date === date);
+      const isInStationScanDates = (stationScanDates[st.name] || []).includes(date);
+      if(SCAN_MODE === 'full' && !isHeldCity && !isOnWatchlist && !topForDate.some(x => x.name === st.name) && !isInStationScanDates) continue;
 
       // Fish-body hard rule: today's markets are observe-only (never real buy)
       const localToday = getLocalDateStr(st.utcOffset);
@@ -952,32 +958,41 @@ async function main(){
 
       let dayScanned=0, dayMaxEdge=0, dayMaxEdgeLabel='';
 
-      // ─── 概率路径观察记录：forecastMax ±2度 共5档 ───
+      // ─── 概率路径观察记录：所有有盘口的精确温度档 ───
       {
-        const centerK = Math.round(forecastMax);
         const bins = {};
-        for(let k=centerK-2; k<=centerK+2; k++){
-          const modelProb = dist[k] || 0;
-          // 查盘口
-          const binMkt = event.markets.find(m=>{
-            if(m.closed) return false;
-            const tm=(m.groupItemTitle||'').match(/(\d+)/);
-            return tm && Number(tm[1])===k && isExactTempTitle(m.groupItemTitle||'');
+        // Check if local time is past 16:00 for this city on this date — if so, max temp realized, skip recording
+        const localHourNow = getLocalHour(st.utcOffset);
+        const localTodayStr = getLocalDateStr(st.utcOffset);
+        const isPastPeak = (date === localTodayStr && localHourNow >= 16);
+        if(!isPastPeak){
+          for(const em of event.markets){
+            if(em.closed) continue;
+            if(!isExactTempTitle(em.groupItemTitle||'')) continue;
+            const tm = (em.groupItemTitle||'').match(/(\d+)/);
+            if(!tm) continue;
+            const k = Number(tm[1]);
+            const modelProb = dist[k] || 0;
+            let marketYes = null;
+            try{ const px=JSON.parse(em.outcomePrices||'[]'); marketYes=Number(px[0]||0); }catch{}
+            bins[k] = {
+              model: Math.round(modelProb*1000)/1000,
+              market: marketYes!=null ? Math.round(marketYes*1000)/1000 : null,
+              edge: marketYes!=null ? Math.round((modelProb - marketYes)*1000)/1000 : null
+            };
+          }
+          observeSnapshots.push({
+            ts: now.toISOString(),
+            city: st.name,
+            date,
+            forecastMax,
+            mu: Math.round(mu*10)/10,
+            sigma,
+            isToday: isTodayMarket,
+            localHour: localHourNow,
+            bins
           });
-          let marketYes = null;
-          if(binMkt){ try{ const px=JSON.parse(binMkt.outcomePrices||'[]'); marketYes=Number(px[0]||0); }catch{} }
-          bins[k] = { model: Math.round(modelProb*1000)/1000, market: marketYes!=null ? Math.round(marketYes*1000)/1000 : null };
         }
-        observeSnapshots.push({
-          ts: now.toISOString(),
-          city: st.name,
-          date,
-          forecastMax,
-          mu: Math.round(mu*10)/10,
-          sigma,
-          isToday: isTodayMarket,
-          bins
-        });
       }
 
       const exactMarkets = event.markets.filter(m=>!m.closed && isExactTempTitle(m.groupItemTitle||''));
