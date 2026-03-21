@@ -6,9 +6,33 @@
 // - Outputs actions for Telegram notification
 
 import { readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 
 const TWC_API_KEY = 'e1f10a1e78da46f5b10a1e78da96f525';
 const PORTFOLIO_PATH = 'data/portfolio.json';
+const WATCHLIST_PATH = 'data/watchlist.json';
+
+// ─── Watchlist persistence ─────────────────────────────────
+// watchlist.json: array of { city, date, firstSeen, reason }
+// Cities stay on watchlist until their target date has settled (date < today).
+async function loadWatchlist(){
+  try{
+    const raw = await readFile(WATCHLIST_PATH, 'utf8');
+    return JSON.parse(raw);
+  }catch{ return []; }
+}
+async function saveWatchlist(wl){
+  await writeFile(WATCHLIST_PATH, JSON.stringify(wl, null, 2));
+}
+function addToWatchlist(wl, city, date, reason){
+  if(!wl.some(w => w.city === city && w.date === date)){
+    wl.push({ city, date, firstSeen: new Date().toISOString(), reason });
+  }
+}
+function pruneWatchlist(wl, todayStr){
+  // Remove entries whose target date is before today (already settled)
+  return wl.filter(w => w.date >= todayStr);
+}
 
 // MODE: "full" (today+tomorrow+day-after) or "today-only" (only today's markets, for intraday intensive scan)
 // Hard rule: NEVER open new positions on today's contracts in any mode
@@ -811,17 +835,46 @@ async function main(){
       break;
     }
   }
+
+  // ─── Watchlist: load, prune settled dates, merge ─────────
+  let watchlist = await loadWatchlist();
+  const localTodayForWL = getLocalDateStr(STATIONS[0].utcOffset);
+  watchlist = pruneWatchlist(watchlist, localTodayForWL);
+
   const topStationsByDate = {};
   for(const date of targetScanDates){
     topStationsByDate[date] = await getTopStationsByEventVolume(date, heldStationNames, 10);
   }
+
+  // Add volume top10 cities to watchlist (with date)
+  for(const [date, sts] of Object.entries(topStationsByDate)){
+    for(const st of sts){
+      addToWatchlist(watchlist, st.name, date, 'volume-top10');
+    }
+  }
+
+  // Build selectedStationNames: volume top10 + watchlist cities + held cities
   const selectedStationNames = new Set(Object.values(topStationsByDate).flat().map(s => s.name));
   for(const name of heldStationNames) selectedStationNames.add(name);
+  // Add watchlist cities whose target dates are in our scan window
+  const watchlistCitiesAdded = [];
+  for(const w of watchlist){
+    if(targetScanDates.has(w.date) && !selectedStationNames.has(w.city)){
+      selectedStationNames.add(w.city);
+      watchlistCitiesAdded.push(w.city);
+    }
+  }
+
+  await saveWatchlist(watchlist);
+
   const stationsToScan = STATIONS.filter(st => selectedStationNames.has(st.name));
   for(const [date, sts] of Object.entries(topStationsByDate)){
     actions.push(`📈 ${date} 成交量前10城市: ${sts.map(s => s.name).join(', ')}`);
   }
-  actions.push(`🧭 去重后扫描城市: ${stationsToScan.map(s => s.name).join(', ')}`);
+  if(watchlistCitiesAdded.length){
+    actions.push(`📋 Watchlist延续城市: ${watchlistCitiesAdded.join(', ')}`);
+  }
+  actions.push(`🧭 去重后扫描城市(${stationsToScan.length}): ${stationsToScan.map(s => s.name).join(', ')}`);
 
   for(const st of stationsToScan){
     let daily,hourly;
@@ -1078,6 +1131,9 @@ async function main(){
           ?`模型${(modelP*100).toFixed(1)}%远高于盘口${(yesP*100).toFixed(1)}%`
           :`模型${(modelP*100).toFixed(1)}%远低于盘口${(yesP*100).toFixed(1)}%`;
 
+        // Add signal city+date to watchlist for continued tracking
+        addToWatchlist(watchlist, st.name, date, `signal-edge-${(Math.abs(edge)*100).toFixed(0)}pct`);
+
         if(OBSERVE_ONLY || dailyLossBreached || isTodayMarket){
           // 纯观察模式 或 当日回撤已达上限：只记录信号，不实际建仓
           actions.push(`\n👁️ [观察] 信号: ${st.name} ${date}(${dayName}) ${title} ${dir}`);
@@ -1121,6 +1177,12 @@ async function main(){
     const { appendFile } = await import('node:fs/promises');
     const logLines = observeSnapshots.map(s => JSON.stringify(s)).join('\n') + '\n';
     await appendFile('data/observe-log.jsonl', logLines, 'utf8');
+  }
+
+  // ─── Save updated watchlist ──────────────────────────────
+  await saveWatchlist(watchlist);
+  if(watchlist.length > 0){
+    actions.push(`📋 Watchlist(${watchlist.length}): ${[...new Set(watchlist.map(w=>w.city))].join(', ')}`);
   }
 
   // ─── Save & Output ──────────────────────────────────────
