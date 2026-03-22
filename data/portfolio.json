@@ -1,6 +1,6 @@
 {
   "initialCapital": 400,
-  "cash": 237.17495599999998,
+  "cash": 400,
   "positions": [],
   "closedTrades": [
     {
@@ -2033,9 +2033,9 @@
       "reason": "take_profit_edge_decay_40pct"
     }
   ],
-  "totalPnl": -162.82735099999996,
+  "totalPnl": 0,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-21T16:50:27.899Z",
+  "updatedAt": "2026-03-22T03:09:23.285Z",
   "rules": {
     "maxPositionPct": 0.15,
     "maxSingleTrade": 20,

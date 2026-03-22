@@ -72,11 +72,35 @@ function getLocalDayDiff(targetDateStr, station){
   return Math.round((b - a) / 86400000);
 }
 
+// 每城市预报误差σ（29天回测：Open-Meteo历史预报 vs TWC实测，2026-02-19~03-19）
+// 提前1天σ为回测值；提前2天σ = 1天值×1.3（估算）；当天σ = 1天值×0.6（已有部分实测修正）
+const CITY_SIGMA = {
+  'Shanghai':  1.2,
+  'Seoul':     1.7,
+  'NYC':       2.3,
+  'London':    0.6,
+  'Chicago':   3.1,
+  'Dallas':    2.7,
+  'Miami':     1.0,
+  'Toronto':   1.2,
+  'Paris':     0.7,
+  'Warsaw':    1.1,
+  'Madrid':    0.9,
+  'Wellington':1.5,
+  'Lucknow':   0.7,
+  // 未回测城市用保守默认值
+  'Milan':     1.0,
+  'Tel Aviv':  1.0,
+  'Hong Kong': 1.2,
+  'Seattle':   1.5,
+};
+
 function getSigmaForDate(targetDateStr, station, baseSigma){
   const dayDiff = getLocalDayDiff(targetDateStr, station);
-  if(dayDiff <= 0) return 0.8;  // 当天
-  if(dayDiff === 1) return 1.0; // 明天
-  return 1.5;                   // 后天及更远
+  const citySigma = CITY_SIGMA[station.name] || 1.5; // 未知城市用保守值
+  if(dayDiff <= 0) return citySigma * 0.6;   // 当天（已有部分实测修正）
+  if(dayDiff === 1) return citySigma;         // 明天（回测值）
+  return citySigma * 1.3;                     // 后天（估算放大）
 }
 
 const STATIONS = [
@@ -270,6 +294,7 @@ async function main(){
   const rules=pf.rules;
   const actions=[]; // will be output as notifications
   const observeSnapshots=[]; // 概率路径观察记录
+  const forecastLogs=[]; // TWC预报记录（用于积累预报误差数据）
 
   // Initialize stopped tracker (24-hour rolling cooldown)
   if(!pf.stoppedToday) pf.stoppedToday = {};
@@ -951,6 +976,21 @@ async function main(){
 
       const sigma = getSigmaForDate(date, st, rules.sigma);
       const dist=buildDist(mu,sigma);
+
+      // 记录TWC预报（用于积累预报误差数据）
+      forecastLogs.push({
+        ts: now.toISOString(),
+        city: st.name,
+        date,
+        forecastMax,
+        hourlyMax,
+        mu: Math.round(mu*10)/10,
+        sigma,
+        citySigmaBase: CITY_SIGMA[st.name] || null,
+        dayDiff: getLocalDayDiff(date, st),
+        precip, cloud, wind, humid,
+      });
+
       const eventSlug=dateSlug(date,st.name);
       let event;
       try{event=await getPMEvent(eventSlug);}catch{}
@@ -1192,6 +1232,13 @@ async function main(){
     const { appendFile } = await import('node:fs/promises');
     const logLines = observeSnapshots.map(s => JSON.stringify(s)).join('\n') + '\n';
     await appendFile('data/observe-log.jsonl', logLines, 'utf8');
+  }
+
+  // ─── Save forecast log（积累TWC预报误差数据）──────────────
+  if(forecastLogs.length > 0){
+    const { appendFile } = await import('node:fs/promises');
+    const logLines = forecastLogs.map(s => JSON.stringify(s)).join('\n') + '\n';
+    await appendFile('data/forecast-log.jsonl', logLines, 'utf8');
   }
 
   // ─── Save updated watchlist ──────────────────────────────

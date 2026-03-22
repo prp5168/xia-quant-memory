@@ -126,63 +126,75 @@
     "reason": "volume-top10"
   },
   {
-    "city": "Seoul",
-    "date": "2026-03-21",
-    "firstSeen": "2026-03-21T16:50:30.170Z",
+    "city": "Paris",
+    "date": "2026-03-22",
+    "firstSeen": "2026-03-21T21:26:15.216Z",
     "reason": "volume-top10"
   },
   {
-    "city": "Shanghai",
+    "city": "Madrid",
+    "date": "2026-03-22",
+    "firstSeen": "2026-03-21T23:15:20.914Z",
+    "reason": "signal-edge-30pct"
+  },
+  {
+    "city": "Seoul",
     "date": "2026-03-21",
-    "firstSeen": "2026-03-21T16:50:30.170Z",
+    "firstSeen": "2026-03-22T03:05:06.410Z",
     "reason": "volume-top10"
   },
   {
     "city": "London",
     "date": "2026-03-21",
-    "firstSeen": "2026-03-21T16:50:30.170Z",
+    "firstSeen": "2026-03-22T03:05:06.410Z",
     "reason": "volume-top10"
   },
   {
-    "city": "Toronto",
+    "city": "Shanghai",
     "date": "2026-03-21",
-    "firstSeen": "2026-03-21T16:50:30.170Z",
+    "firstSeen": "2026-03-22T03:05:06.410Z",
     "reason": "volume-top10"
   },
   {
     "city": "NYC",
     "date": "2026-03-21",
-    "firstSeen": "2026-03-21T16:50:30.170Z",
+    "firstSeen": "2026-03-22T03:05:06.410Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Toronto",
+    "date": "2026-03-21",
+    "firstSeen": "2026-03-22T03:05:06.410Z",
     "reason": "volume-top10"
   },
   {
     "city": "Chicago",
     "date": "2026-03-21",
-    "firstSeen": "2026-03-21T16:50:30.170Z",
+    "firstSeen": "2026-03-22T03:05:06.410Z",
     "reason": "volume-top10"
   },
   {
-    "city": "Paris",
+    "city": "Miami",
     "date": "2026-03-21",
-    "firstSeen": "2026-03-21T16:50:30.170Z",
+    "firstSeen": "2026-03-22T03:05:06.410Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Dallas",
+    "date": "2026-03-21",
+    "firstSeen": "2026-03-22T03:05:06.410Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Seattle",
+    "date": "2026-03-21",
+    "firstSeen": "2026-03-22T03:05:06.410Z",
     "reason": "volume-top10"
   },
   {
     "city": "Lucknow",
     "date": "2026-03-21",
-    "firstSeen": "2026-03-21T16:50:30.170Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Wellington",
-    "date": "2026-03-21",
-    "firstSeen": "2026-03-21T16:50:30.170Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Warsaw",
-    "date": "2026-03-21",
-    "firstSeen": "2026-03-21T16:50:30.170Z",
+    "firstSeen": "2026-03-22T03:05:06.410Z",
     "reason": "volume-top10"
   }
 ]

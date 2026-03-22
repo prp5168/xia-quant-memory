@@ -1,0 +1,132 @@
+{
+  "Shanghai": {
+    "n1d": 29,
+    "bias1d": -1.7,
+    "mae1d": 1.7,
+    "sigma1d": 1.2,
+    "n2d": 29,
+    "bias2d": -1.7,
+    "mae2d": 1.7,
+    "sigma2d": 1.2
+  },
+  "Seoul": {
+    "n1d": 29,
+    "bias1d": -3.1,
+    "mae1d": 3.1,
+    "sigma1d": 1.7,
+    "n2d": 29,
+    "bias2d": -3.1,
+    "mae2d": 3.1,
+    "sigma2d": 1.7
+  },
+  "NYC": {
+    "n1d": 29,
+    "bias1d": 0.9,
+    "mae1d": 1.2,
+    "sigma1d": 2.3,
+    "n2d": 29,
+    "bias2d": 0.9,
+    "mae2d": 1.2,
+    "sigma2d": 2.3
+  },
+  "London": {
+    "n1d": 29,
+    "bias1d": 0,
+    "mae1d": 0.3,
+    "sigma1d": 0.6,
+    "n2d": 29,
+    "bias2d": 0,
+    "mae2d": 0.3,
+    "sigma2d": 0.6
+  },
+  "Chicago": {
+    "n1d": 29,
+    "bias1d": 0.5,
+    "mae1d": 1.2,
+    "sigma1d": 3.1,
+    "n2d": 29,
+    "bias2d": 0.5,
+    "mae2d": 1.2,
+    "sigma2d": 3.1
+  },
+  "Dallas": {
+    "n1d": 29,
+    "bias1d": 0.3,
+    "mae1d": 0.9,
+    "sigma1d": 2.7,
+    "n2d": 29,
+    "bias2d": 0.3,
+    "mae2d": 0.9,
+    "sigma2d": 2.7
+  },
+  "Miami": {
+    "n1d": 29,
+    "bias1d": -0.1,
+    "mae1d": 0.6,
+    "sigma1d": 1,
+    "n2d": 29,
+    "bias2d": -0.1,
+    "mae2d": 0.6,
+    "sigma2d": 1
+  },
+  "Toronto": {
+    "n1d": 29,
+    "bias1d": 0.1,
+    "mae1d": 0.8,
+    "sigma1d": 1.2,
+    "n2d": 29,
+    "bias2d": 0.1,
+    "mae2d": 0.8,
+    "sigma2d": 1.2
+  },
+  "Paris": {
+    "n1d": 29,
+    "bias1d": -0.4,
+    "mae1d": 0.4,
+    "sigma1d": 0.7,
+    "n2d": 29,
+    "bias2d": -0.4,
+    "mae2d": 0.4,
+    "sigma2d": 0.7
+  },
+  "Warsaw": {
+    "n1d": 29,
+    "bias1d": -0.8,
+    "mae1d": 1,
+    "sigma1d": 1.1,
+    "n2d": 29,
+    "bias2d": -0.8,
+    "mae2d": 1,
+    "sigma2d": 1.1
+  },
+  "Madrid": {
+    "n1d": 29,
+    "bias1d": 0.2,
+    "mae1d": 0.6,
+    "sigma1d": 0.9,
+    "n2d": 29,
+    "bias2d": 0.2,
+    "mae2d": 0.6,
+    "sigma2d": 0.9
+  },
+  "Wellington": {
+    "n1d": 29,
+    "bias1d": -1.2,
+    "mae1d": 1.4,
+    "sigma1d": 1.5,
+    "n2d": 29,
+    "bias2d": -1.2,
+    "mae2d": 1.4,
+    "sigma2d": 1.5
+  },
+  "Lucknow": {
+    "n1d": 29,
+    "bias1d": 0.1,
+    "mae1d": 0.5,
+    "sigma1d": 0.7,
+    "n2d": 29,
+    "bias2d": 0.1,
+    "mae2d": 0.5,
+    "sigma2d": 0.7
+  }
+}

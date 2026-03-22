@@ -1,0 +1,132 @@
+{
+  "Shanghai": {
+    "n": 90,
+    "mean90d": 11.7,
+    "std90d": 4,
+    "diffStd90d": 3.2,
+    "mean30d": 13,
+    "diffStd30d": 2.7,
+    "min": 4,
+    "max": 23
+  },
+  "Seoul": {
+    "n": 90,
+    "mean90d": 4.1,
+    "std90d": 5.2,
+    "diffStd90d": 3.7,
+    "mean30d": 9,
+    "diffStd30d": 3.3,
+    "min": -6,
+    "max": 16
+  },
+  "NYC": {
+    "n": 90,
+    "mean90d": 3.6,
+    "std90d": 5.4,
+    "diffStd90d": 4,
+    "mean30d": 6.7,
+    "diffStd30d": 4.6,
+    "min": -8,
+    "max": 19
+  },
+  "London": {
+    "n": 90,
+    "mean90d": 9.9,
+    "std90d": 3.4,
+    "diffStd90d": 2.3,
+    "mean30d": 13,
+    "diffStd30d": 2.7,
+    "min": 2,
+    "max": 18
+  },
+  "Chicago": {
+    "n": 90,
+    "mean90d": 3.7,
+    "std90d": 8.6,
+    "diffStd90d": 6.7,
+    "mean30d": 7.9,
+    "diffStd30d": 8.9,
+    "min": -16,
+    "max": 22
+  },
+  "Dallas": {
+    "n": 90,
+    "mean90d": 19.7,
+    "std90d": 7.9,
+    "diffStd90d": 6.3,
+    "mean30d": 23.5,
+    "diffStd30d": 7.4,
+    "min": -6,
+    "max": 31
+  },
+  "Miami": {
+    "n": 90,
+    "mean90d": 25,
+    "std90d": 3.9,
+    "diffStd90d": 3.5,
+    "mean30d": 26.5,
+    "diffStd30d": 3.7,
+    "min": 11,
+    "max": 31
+  },
+  "Toronto": {
+    "n": 90,
+    "mean90d": 0,
+    "std90d": 6.7,
+    "diffStd90d": 5.5,
+    "mean30d": 4.3,
+    "diffStd30d": 6.9,
+    "min": -13,
+    "max": 19
+  },
+  "Paris": {
+    "n": 90,
+    "mean90d": 10.6,
+    "std90d": 4.6,
+    "diffStd90d": 2.5,
+    "mean30d": 15.2,
+    "diffStd30d": 2.5,
+    "min": -1,
+    "max": 21
+  },
+  "Warsaw": {
+    "n": 90,
+    "mean90d": 2.6,
+    "std90d": 7.6,
+    "diffStd90d": 2.7,
+    "mean30d": 11.4,
+    "diffStd30d": 2.7,
+    "min": -10,
+    "max": 19
+  },
+  "Madrid": {
+    "n": 90,
+    "mean90d": 12.3,
+    "std90d": 4.3,
+    "diffStd90d": 3.1,
+    "mean30d": 16.5,
+    "diffStd30d": 3.1,
+    "min": 5,
+    "max": 22
+  },
+  "Wellington": {
+    "n": 90,
+    "mean90d": 19.9,
+    "std90d": 2.6,
+    "diffStd90d": 2.8,
+    "mean30d": 19.4,
+    "diffStd30d": 2.9,
+    "min": 12,
+    "max": 25
+  },
+  "Lucknow": {
+    "n": 90,
+    "mean90d": 24.7,
+    "std90d": 5.8,
+    "diffStd90d": 2,
+    "mean30d": 31.4,
+    "diffStd30d": 2,
+    "min": 14,
+    "max": 35
+  }
+}
