@@ -958,6 +958,8 @@ async function main(){
       // Fish-body hard rule: today's markets are observe-only (never real buy)
       const localToday = getLocalDateStr(st.utcOffset);
       const isTodayMarket = (date === localToday);
+      const localHourNow = getLocalHour(st.utcOffset);
+      const isPastPeak = (date === localToday && localHourNow >= 16);
 
       const hTemps=[];
       for(let h=0;h<(hourly.validTimeLocal||[]).length;h++){
@@ -977,49 +979,50 @@ async function main(){
       const sigma = getSigmaForDate(date, st, rules.sigma);
       const dist=buildDist(mu,sigma);
 
-      // 记录TWC预报（用于积累预报误差数据）
-      forecastLogs.push({
-        ts: now.toISOString(),
-        city: st.name,
-        date,
-        forecastMax,
-        hourlyMax,
-        mu: Math.round(mu*10)/10,
-        sigma,
-        citySigmaBase: CITY_SIGMA[st.name] || null,
-        dayDiff: getLocalDayDiff(date, st),
-        precip, cloud, wind, humid,
-      });
+      // 统一记录窗口：当地当天16:00后，observe/forecast 两边都停止写入
+      if(!isPastPeak){
+        // 记录TWC预报（用于积累预报误差数据）
+        forecastLogs.push({
+          ts: now.toISOString(),
+          city: st.name,
+          date,
+          forecastMax,
+          hourlyMax,
+          mu: Math.round(mu*10)/10,
+          sigma,
+          citySigmaBase: CITY_SIGMA[st.name] || null,
+          dayDiff: getLocalDayDiff(date, st),
+          precip, cloud, wind, humid,
+          localHour: localHourNow,
+        });
+      }
 
       const eventSlug=dateSlug(date,st.name);
       let event;
       try{event=await getPMEvent(eventSlug);}catch{}
-      if(!event?.markets?.length) continue;
 
       let dayScanned=0, dayMaxEdge=0, dayMaxEdgeLabel='';
 
       // ─── 概率路径观察记录：所有有盘口的精确温度档 ───
       {
         const bins = {};
-        // Check if local time is past 16:00 for this city on this date — if so, max temp realized, skip recording
-        const localHourNow = getLocalHour(st.utcOffset);
-        const localTodayStr = getLocalDateStr(st.utcOffset);
-        const isPastPeak = (date === localTodayStr && localHourNow >= 16);
         if(!isPastPeak){
-          for(const em of event.markets){
-            if(em.closed) continue;
-            if(!isExactTempTitle(em.groupItemTitle||'')) continue;
-            const tm = (em.groupItemTitle||'').match(/(\d+)/);
-            if(!tm) continue;
-            const k = Number(tm[1]);
-            const modelProb = dist[k] || 0;
-            let marketYes = null;
-            try{ const px=JSON.parse(em.outcomePrices||'[]'); marketYes=Number(px[0]||0); }catch{}
-            bins[k] = {
-              model: Math.round(modelProb*1000)/1000,
-              market: marketYes!=null ? Math.round(marketYes*1000)/1000 : null,
-              edge: marketYes!=null ? Math.round((modelProb - marketYes)*1000)/1000 : null
-            };
+          if(event?.markets?.length){
+            for(const em of event.markets){
+              if(em.closed) continue;
+              if(!isExactTempTitle(em.groupItemTitle||'')) continue;
+              const tm = (em.groupItemTitle||'').match(/(\d+)/);
+              if(!tm) continue;
+              const k = Number(tm[1]);
+              const modelProb = dist[k] || 0;
+              let marketYes = null;
+              try{ const px=JSON.parse(em.outcomePrices||'[]'); marketYes=Number(px[0]||0); }catch{}
+              bins[k] = {
+                model: Math.round(modelProb*1000)/1000,
+                market: marketYes!=null ? Math.round(marketYes*1000)/1000 : null,
+                edge: marketYes!=null ? Math.round((modelProb - marketYes)*1000)/1000 : null
+              };
+            }
           }
           observeSnapshots.push({
             ts: now.toISOString(),
@@ -1030,10 +1033,13 @@ async function main(){
             sigma,
             isToday: isTodayMarket,
             localHour: localHourNow,
+            marketMissing: !event?.markets?.length,
             bins
           });
         }
       }
+
+      if(!event?.markets?.length) continue;
 
       const exactMarkets = event.markets.filter(m=>!m.closed && isExactTempTitle(m.groupItemTitle||''));
       let peakK = null;
