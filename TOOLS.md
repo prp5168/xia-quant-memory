@@ -1,40 +1,11 @@
 # TOOLS.md - Local Notes
 
-Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
+## GitHub Sync
+- Repo: `git@github.com:prp5168/xia-quant-memory.git`
+- Branch: `master`
+- Auto-sync script: `scripts/auto_sync.sh`
+- Sync scope: MEMORY.md, memory/, RULES.md, SOUL.md, USER.md, IDENTITY.md, data/observe-log.jsonl, data/forecast-log.jsonl, data/watchlist.json, data/portfolio.json, scripts/
 
-## What Goes Here
-
-Things like:
-
-- Camera names and locations
-- SSH hosts and aliases
-- Preferred voices for TTS
-- Speaker/room names
-- Device nicknames
-- Anything environment-specific
-
-## Examples
-
-```markdown
-### Cameras
-
-- living-room → Main area, 180° wide angle
-- front-door → Entrance, motion-triggered
-
-### SSH
-
-- home-server → 192.168.1.100, user: admin
-
-### TTS
-
-- Preferred voice: "Nova" (warm, slightly British)
-- Default speaker: Kitchen HomePod
-```
-
-## Why Separate?
-
-Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
-
----
-
-Add whatever helps you do your job. This is your cheat sheet.
+## 项目提醒
+- 虾量化是项目型 bot，详细项目记忆优先保留在本 bot 工作区。
+- 平台级摘要归档由虾记负责，不替代本 bot 的项目原始记忆。

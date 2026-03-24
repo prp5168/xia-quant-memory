@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "repo": "git@github.com:prp5168/xia-quant-memory.git",
+  "branch": "master",
+  "include": [
+    "MEMORY.md",
+    "memory/",
+    "RULES.md",
+    "SOUL.md",
+    "USER.md",
+    "IDENTITY.md",
+    "data/observe-log.jsonl",
+    "data/forecast-log.jsonl",
+    "data/watchlist.json",
+    "data/portfolio.json",
+    "scripts/"
+  ]
+}
