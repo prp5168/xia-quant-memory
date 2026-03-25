@@ -1031,6 +1031,7 @@ async function main(){
             forecastMax,
             mu: Math.round(mu*10)/10,
             sigma,
+            dayDiff: getLocalDayDiff(date, st),
             isToday: isTodayMarket,
             localHour: localHourNow,
             marketMissing: !event?.markets?.length,
