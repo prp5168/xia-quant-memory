@@ -1311,8 +1311,10 @@ async function main(){
   const actionKeywords = ['🛒 买入', '🚨 止损', '💰 卖出', '🎯 止盈', '⏰ 分层止盈', '🏁 结算', '📥 补仓'];
   const compactActionLines = actions.filter(line => actionKeywords.some(k => line.includes(k)) || line.includes('💡 逻辑:'));
   const totalAssets = summaryCash + posVal;
+  const totalPnl = totalAssets - Number(pf.initialCapital || 0);
+  const unrealizedPnl = totalPnl - realizedPnl;
   const modeLabel = OBSERVE_ONLY ? `${SCAN_MODE}👁️观察` : SCAN_MODE;
-  const summaryLine = `📌 ${modeLabel}｜持仓${pf.positions.length}个｜现金$${summaryCash.toFixed(2)}｜可平资产$${posVal.toFixed(2)}｜总资产$${totalAssets.toFixed(2)}｜已平仓${pf.closedTrades.length}笔｜累计PnL $${realizedPnl.toFixed(2)}`;
+  const summaryLine = `📌 ${modeLabel}｜持仓${pf.positions.length}个｜现金$${summaryCash.toFixed(2)}｜可平资产$${posVal.toFixed(2)}｜总资产$${totalAssets.toFixed(2)}｜已实现$${realizedPnl.toFixed(2)}｜浮动$${unrealizedPnl.toFixed(2)}｜总PnL $${totalPnl.toFixed(2)}｜已平仓${pf.closedTrades.length}笔`;
 
   if(compactActionLines.length === 0){
     console.log(`无动作｜${summaryLine}`);
