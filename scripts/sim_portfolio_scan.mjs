@@ -1085,13 +1085,14 @@ async function main(){
 
         if(absEdge<rules.minEdge){ citySkippedEdge++; continue; }
 
-        // ─── 2026-03-26 数据验证结论: 禁止 BUY_YES center 建仓 ───
-        // BUY_YES center 115笔回测胜率17.4%, PnL -426.59, 系统性亏损主力
-        // 原因: sigma低估导致模型对mu附近概率过度自信
+        // ─── 2026-03-26 数据验证结论: 禁止 BUY_YES 全桶位建仓 ───
+        // center 115笔 17.4% 胜率 PnL -426.59
+        // near 10笔 0% 胜率 PnL -200.00
+        // 模型系统性高估单档位命中概率，BUY_YES 在所有距离上均为负收益
         const distFromMu = Math.abs(k - mu);
         const bucketType = distFromMu > 2 ? 'tail' : (distFromMu > 1 ? 'near' : 'center');
-        if(dir === 'BUY_YES' && bucketType === 'center'){
-          actions.push(`   ⛔ 禁止 ${st.name} ${date} ${title} BUY_YES center: 数据验证该方向系统性亏损`);
+        if(dir === 'BUY_YES'){
+          actions.push(`   ⛔ 禁止 ${st.name} ${date} ${title} BUY_YES ${bucketType}: 数据验证BUY_YES全桶位系统性亏损`);
           continue;
         }
 
