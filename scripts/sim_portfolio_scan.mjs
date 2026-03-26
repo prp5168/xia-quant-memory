@@ -262,28 +262,10 @@ async function estimateLiquidationValue(pos){
   }
 }
 
-function getCorrectedClosedTradePnl(trade){
-  const oldPnl = Number(trade.pnl || 0);
-  if(trade.dir !== 'BUY_NO') return Math.round(oldPnl * 100) / 100;
-  const entryYes = Number(trade.entryPrice || 0);
-  const exitYes = Number(trade.exitPrice || 0);
-  const cost = Number(trade.cost || 0);
-  if(!(entryYes >= 0 && entryYes < 1) || !(exitYes >= 0 && exitYes <= 1) || cost < 0) return Math.round(oldPnl * 100) / 100;
-  const noEntry = 1 - entryYes;
-  const noExit = 1 - exitYes;
-  if(noEntry <= 0) return Math.round(oldPnl * 100) / 100;
-  const correctedShares = cost / noEntry;
-  const correctedExitVal = correctedShares * noExit;
-  return Math.round((correctedExitVal - cost) * 100) / 100;
-}
-
-function getCorrectedSummaryAccounting(pf){
-  const correctedClosedPnl = pf.closedTrades.reduce((sum, t) => sum + getCorrectedClosedTradePnl(t), 0);
-  const openCost = pf.positions.reduce((sum, p) => sum + Number(p.cost || 0), 0);
-  const correctedCash = pf.initialCapital + correctedClosedPnl - openCost;
+function getSummaryAccounting(pf){
   return {
-    correctedClosedPnl: Math.round(correctedClosedPnl * 100) / 100,
-    correctedCash: Math.round(correctedCash * 100) / 100,
+    cash: Math.round(Number(pf.cash || 0) * 100) / 100,
+    realizedPnl: Math.round(Number(pf.totalPnl || 0) * 100) / 100,
   };
 }
 
@@ -1324,13 +1306,13 @@ async function main(){
     posVal += await estimateLiquidationValue(p);
   }
   posVal = Math.round(posVal * 100) / 100;
-  const { correctedClosedPnl, correctedCash } = getCorrectedSummaryAccounting(pf);
+  const { cash: summaryCash, realizedPnl } = getSummaryAccounting(pf);
 
   const actionKeywords = ['🛒 买入', '🚨 止损', '💰 卖出', '🎯 止盈', '⏰ 分层止盈', '🏁 结算', '📥 补仓'];
   const compactActionLines = actions.filter(line => actionKeywords.some(k => line.includes(k)) || line.includes('💡 逻辑:'));
-  const totalAssets = correctedCash + posVal;
+  const totalAssets = summaryCash + posVal;
   const modeLabel = OBSERVE_ONLY ? `${SCAN_MODE}👁️观察` : SCAN_MODE;
-  const summaryLine = `📌 ${modeLabel}｜持仓${pf.positions.length}个｜现金$${correctedCash.toFixed(2)}｜可平资产$${posVal.toFixed(2)}｜总资产$${totalAssets.toFixed(2)}｜已平仓${pf.closedTrades.length}笔｜累计PnL $${correctedClosedPnl.toFixed(2)}`;
+  const summaryLine = `📌 ${modeLabel}｜持仓${pf.positions.length}个｜现金$${summaryCash.toFixed(2)}｜可平资产$${posVal.toFixed(2)}｜总资产$${totalAssets.toFixed(2)}｜已平仓${pf.closedTrades.length}笔｜累计PnL $${realizedPnl.toFixed(2)}`;
 
   if(compactActionLines.length === 0){
     console.log(`无动作｜${summaryLine}`);
