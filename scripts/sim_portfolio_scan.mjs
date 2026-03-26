@@ -328,7 +328,7 @@ async function main(){
       if(m){
         const px=JSON.parse(m.outcomePrices||'[]');
         currentYesP=Number(px[0]||0);
-        currentNoP=Number(px[1]|| (1-currentYesP) || 0);
+        currentNoP=Number(px[1] || 0);
         if(m.closed){
           // Market closed/resolved
           const resolved=currentYesP>0.95?1:(currentYesP<0.05?0:currentYesP);
@@ -430,7 +430,7 @@ async function main(){
             exitPrice2 = slFill2.avgPrice;
             const exitShares2 = Math.min(slFill2.shares, pos.shares);
             if(pos.dir==='BUY_YES') exitVal2 = exitShares2 * exitPrice2;
-            else exitVal2 = exitShares2 * (1 - exitPrice2);
+            else exitVal2 = exitShares2 * exitPrice2;
           } else { exitPrice2=pos.dir==='BUY_YES'?0:1; exitVal2=0; }
           const realPnl2=exitVal2-pos.cost;
           pf.cash+=exitVal2;
@@ -465,7 +465,7 @@ async function main(){
                 exitPrice3 = slFill3.avgPrice;
                 const exitShares3 = Math.min(slFill3.shares, pos.shares);
                 if(pos.dir==='BUY_YES') exitVal3 = exitShares3 * exitPrice3;
-                else exitVal3 = exitShares3 * (1 - exitPrice3);
+                else exitVal3 = exitShares3 * exitPrice3;
               } else { exitPrice3=0; exitVal3=0; }
               const realPnl3=exitVal3-pos.cost;
               pf.cash+=exitVal3;
@@ -483,7 +483,7 @@ async function main(){
         {
           let currentVal;
           if(pos.dir==='BUY_YES') currentVal = pos.shares * currentYesP;
-          else currentVal = pos.shares * (1 - currentYesP);
+          else currentVal = pos.shares * currentNoP;
           const drawdown = (pos.cost - currentVal) / pos.cost;
           if(drawdown >= 0.5){
             const slBook4 = pos.dir==='BUY_YES' ? ba : baNo;
@@ -495,7 +495,7 @@ async function main(){
               exitPrice4 = slFill4.avgPrice;
               const exitShares4 = Math.min(slFill4.shares, pos.shares);
               if(pos.dir==='BUY_YES') exitVal4 = exitShares4 * exitPrice4;
-              else exitVal4 = exitShares4 * (1 - exitPrice4);
+              else exitVal4 = exitShares4 * exitPrice4;
             } else { exitPrice4=0; exitVal4=0; }
             const realPnl4=exitVal4-pos.cost;
             pf.cash+=exitVal4;
@@ -524,8 +524,8 @@ async function main(){
           exitPriceE = slFillE.avgPrice;
           const exitSharesE = Math.min(slFillE.shares, pos.shares);
           if(pos.dir==='BUY_YES') exitValE = exitSharesE * exitPriceE;
-          else exitValE = exitSharesE * (1 - exitPriceE);
-        } else { exitPriceE = ba.mid || currentYesP; exitValE = pos.dir==='BUY_YES' ? pos.shares*exitPriceE : pos.shares*(1-exitPriceE); }
+          else exitValE = exitSharesE * exitPriceE;
+        } else { exitPriceE = ba.mid || currentYesP; exitValE = pos.dir==='BUY_YES' ? pos.shares*exitPriceE : pos.shares*exitPriceE; }
         const realPnlE = exitValE - pos.cost;
         pf.cash += exitValE;
         pf.totalPnl += realPnlE;
@@ -539,7 +539,7 @@ async function main(){
 
     // ─── V2 NEAR 止盈/止损 ───
     if(pos.bucket === 'near' && pos.dir === 'BUY_NO'){
-      const currentNoForTP = 1 - currentYesP;
+      const currentNoForTP = currentNoP;
       const entryNo = 1 - pos.entryPrice;
       // 止盈: NO ≥ 90%
       if(currentNoForTP >= 0.90){
@@ -599,11 +599,11 @@ async function main(){
         const exitShares0 = Math.min(sellFill0.shares, pos.shares);
         exitPrice0 = sellFill0.avgPrice;
         if(pos.dir==='BUY_YES') exitVal0 = exitShares0 * exitPrice0;
-        else exitVal0 = exitShares0 * (1 - exitPrice0);
+        else exitVal0 = exitShares0 * exitPrice0;
       } else {
         exitPrice0 = ba.mid || currentYesP;
         if(pos.dir==='BUY_YES') exitVal0 = pos.shares * exitPrice0;
-        else exitVal0 = pos.shares * (1 - exitPrice0);
+        else exitVal0 = pos.shares * exitPrice0;
       }
       const realPnl0 = exitVal0 - pos.cost;
       pf.cash += exitVal0;
@@ -678,11 +678,11 @@ async function main(){
         const exitSharesN = Math.min(sellFillN.shares, pos.shares);
         exitPriceN = sellFillN.avgPrice;
         if(pos.dir==='BUY_YES') exitValN = exitSharesN * exitPriceN;
-        else exitValN = exitSharesN * (1 - exitPriceN);
+        else exitValN = exitSharesN * exitPriceN;
       } else {
         exitPriceN = ba.mid || currentYesP;
         if(pos.dir==='BUY_YES') exitValN = pos.shares * exitPriceN;
-        else exitValN = pos.shares * (1 - exitPriceN);
+        else exitValN = pos.shares * exitPriceN;
       }
       const realPnlN = exitValN - pos.cost;
       pf.cash += exitValN;
@@ -701,7 +701,7 @@ async function main(){
       if(localH >= 6 && localH <= 14 && !pos.partialTpDone){
         let currentVal;
         if(pos.dir==='BUY_YES') currentVal = pos.shares * currentYesP;
-        else currentVal = pos.shares * (1 - currentYesP);
+        else currentVal = pos.shares * currentNoP;
         const floatPnl = currentVal - pos.cost;
         if(floatPnl > 0){
           const targetShares = Math.max(1, pos.shares * 0.5);
@@ -783,7 +783,7 @@ async function main(){
     // ─── 第二轮优化: edge 衰减止盈（只剩入场edge的40%以下就兑现） ───
     let currentValForTp;
     if(pos.dir==='BUY_YES') currentValForTp = pos.shares * currentYesP;
-    else currentValForTp = pos.shares * (1 - currentYesP);
+    else currentValForTp = pos.shares * currentNoP;
     const floatingPnlForTp = currentValForTp - pos.cost;
     if(initialEdge > 0 && currentEdge > 0 && currentEdge <= initialEdge * 0.4 && floatingPnlForTp > 0){
       const tpBook0 = pos.dir==='BUY_YES' ? ba : baNo;
@@ -795,11 +795,11 @@ async function main(){
         const exitShares0 = Math.min(tpFill0.shares, pos.shares);
         exitPrice0 = tpFill0.avgPrice;
         if(pos.dir==='BUY_YES') exitVal0 = exitShares0 * exitPrice0;
-        else exitVal0 = exitShares0 * (1 - exitPrice0);
+        else exitVal0 = exitShares0 * exitPrice0;
       } else {
         exitPrice0 = ba.mid || currentYesP;
         if(pos.dir==='BUY_YES') exitVal0 = pos.shares * exitPrice0;
-        else exitVal0 = pos.shares * (1 - exitPrice0);
+        else exitVal0 = pos.shares * exitPrice0;
       }
       const realPnl0 = exitVal0 - pos.cost;
       if(realPnl0 > 0){
@@ -830,7 +830,7 @@ async function main(){
       } else {
         exitPrice = ba.mid || currentYesP;
         if(pos.dir==='BUY_YES') exitVal = pos.shares * exitPrice;
-        else exitVal = pos.shares * (1 - exitPrice);
+        else exitVal = pos.shares * exitPrice;
       }
       const realPnl=exitVal-pos.cost;
       if(realPnl > 0){
@@ -1127,7 +1127,7 @@ async function main(){
         else if(isLow) modelP=Object.entries(dist).filter(([kk])=>Number(kk)<=k).reduce((s,[,v])=>s+v,0);
         else modelP=dist[k]||0;
 
-        const noP = Number(px[1] || (1-yesP) || 0);
+        const noP = Number(px[1] || 0);
         const edgeYes = modelP - yesP;
         const edgeNo = (1 - modelP) - noP;
         const dir = edgeYes > edgeNo ? 'BUY_YES' : 'BUY_NO';
