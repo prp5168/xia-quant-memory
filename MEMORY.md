@@ -149,8 +149,8 @@
 - 目前状态：**先记录，不立刻展开策略设计；等需要时再继续分析。**
 
 ## 会话机制
-- 全局配置：session.reset.mode = "idle", idleMinutes = 60
-- 含义：所有 bot 闲置 60 分钟自动 reset session，下次消息 = 全新会话
+- 全局配置：session.reset.mode = "idle", idleMinutes = 120
+- 含义：所有 bot 闲置 120 分钟（2小时）自动 reset session，下次消息 = 全新会话
 - cron 任务是 isolated session，每次独立，不共享主会话上下文
 - **所以：任何重要讨论必须在会话内就写入文件，不能依赖"下次还记得"**
 
