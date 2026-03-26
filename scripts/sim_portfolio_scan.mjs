@@ -98,9 +98,9 @@ const CITY_SIGMA = {
 function getSigmaForDate(targetDateStr, station, baseSigma){
   const dayDiff = getLocalDayDiff(targetDateStr, station);
   const citySigma = CITY_SIGMA[station.name] || 1.5; // 未知城市用保守值
-  if(dayDiff <= 0) return citySigma * 0.6;   // 当天（已有部分实测修正）
-  if(dayDiff === 1) return citySigma;         // 明天（回测值）
-  return citySigma * 1.3;                     // 后天（估算放大）
+  if(dayDiff <= 0) return citySigma * 1.2;   // 当天（2x基线，已有部分实测修正所以略低）
+  if(dayDiff === 1) return citySigma * 2.0;  // 明天（2x基线，数据验证 forecast drift 远超 1x sigma）
+  return citySigma * 2.6;                     // 后天（2x基线再放大）
 }
 
 const STATIONS = [
@@ -1084,6 +1084,16 @@ async function main(){
         if(absEdge>cityMaxEdge){cityMaxEdge=absEdge;cityMaxEdgeLabel=`${date} ${title}(${(edge*100).toFixed(1)}%)`;}
 
         if(absEdge<rules.minEdge){ citySkippedEdge++; continue; }
+
+        // ─── 2026-03-26 数据验证结论: 禁止 BUY_YES center 建仓 ───
+        // BUY_YES center 115笔回测胜率17.4%, PnL -426.59, 系统性亏损主力
+        // 原因: sigma低估导致模型对mu附近概率过度自信
+        const distFromMu = Math.abs(k - mu);
+        const bucketType = distFromMu > 2 ? 'tail' : (distFromMu > 1 ? 'near' : 'center');
+        if(dir === 'BUY_YES' && bucketType === 'center'){
+          actions.push(`   ⛔ 禁止 ${st.name} ${date} ${title} BUY_YES center: 数据验证该方向系统性亏损`);
+          continue;
+        }
 
         // Skip if already have position in this slug
         if(pf.positions.some(p=>p.slug===mkt.slug)) continue;
