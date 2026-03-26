@@ -537,6 +537,55 @@ async function main(){
       }
     }
 
+    // ─── V2 NEAR 止盈/止损 ───
+    if(pos.bucket === 'near' && pos.dir === 'BUY_NO'){
+      const currentNoForTP = 1 - currentYesP;
+      const entryNo = 1 - pos.entryPrice;
+      // 止盈: NO ≥ 90%
+      if(currentNoForTP >= 0.90){
+        const tpBookN = baNo.simulateFill ? baNo : ba;
+        const tpFillN = tpBookN.simulateFill ? tpBookN.simulateFill('bid', pos.shares * (baNo.bestBid || currentNoForTP)) : null;
+        let exitValN, exitPriceN;
+        if(tpFillN && tpFillN.filled){
+          const exitSharesN = Math.min(tpFillN.shares, pos.shares);
+          exitPriceN = tpFillN.avgPrice;
+          exitValN = exitSharesN * exitPriceN;
+        } else {
+          exitPriceN = currentNoForTP;
+          exitValN = pos.shares * exitPriceN;
+        }
+        const realPnlN = exitValN - pos.cost;
+        pf.cash += exitValN;
+        pf.totalPnl += realPnlN;
+        pf.closedTrades.push({...pos, exitPrice: pos.entryPrice, exitTime:now.toISOString(), pnl:Math.round(realPnlN*100)/100, reason:'v2_near_tp_no90pct'});
+        pf.stoppedToday[pos.slug] = now.toISOString();
+        pf.positions.splice(pi,1);
+        actions.push(`🎯 止盈(NEAR NO≥90%): ${pos.station} ${pos.date} ${pos.tempLabel} | NO入${(entryNo*100).toFixed(1)}%→现${(currentNoForTP*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitValN.toFixed(2)} PnL=$${realPnlN.toFixed(2)}`);
+        continue;
+      }
+      // 止损: NO ≤ 20%
+      if(currentNoForTP <= 0.20){
+        const slBookN = baNo.simulateFill ? baNo : ba;
+        const slFillN = slBookN.simulateFill ? slBookN.simulateFill('bid', pos.shares * (baNo.bestBid || currentNoForTP || 0.01)) : null;
+        let exitValSL, exitPriceSL;
+        if(slFillN && slFillN.filled){
+          exitPriceSL = slFillN.avgPrice;
+          exitValSL = Math.min(slFillN.shares, pos.shares) * exitPriceSL;
+        } else {
+          exitPriceSL = currentNoForTP;
+          exitValSL = pos.shares * exitPriceSL;
+        }
+        const realPnlSL = exitValSL - pos.cost;
+        pf.cash += exitValSL;
+        pf.totalPnl += realPnlSL;
+        pf.closedTrades.push({...pos, exitPrice: pos.entryPrice, exitTime:now.toISOString(), pnl:Math.round(realPnlSL*100)/100, reason:'v2_near_sl_no20pct'});
+        pf.stoppedToday[pos.slug] = now.toISOString();
+        pf.positions.splice(pi,1);
+        actions.push(`🚨 止损(NEAR NO≤20%): ${pos.station} ${pos.date} ${pos.tempLabel} | NO入${(entryNo*100).toFixed(1)}%→现${(currentNoForTP*100).toFixed(1)}% | 成本$${pos.cost.toFixed(2)} 回收$${exitValSL.toFixed(2)} PnL=$${realPnlSL.toFixed(2)}`);
+        continue;
+      }
+    }
+
     // Check sell condition
     const currentEdge = pos.dir==='BUY_YES' ? (modelP - currentYesP) : ((1 - modelP) - currentNoP);
 
@@ -1090,78 +1139,80 @@ async function main(){
 
         if(absEdge<rules.minEdge){ citySkippedEdge++; continue; }
 
-        // ─── 2026-03-26 数据验证结论: 禁止 BUY_YES 全桶位建仓 ───
-        // center 115笔 17.4% 胜率 PnL -426.59
-        // near 10笔 0% 胜率 PnL -200.00
-        // 模型系统性高估单档位命中概率，BUY_YES 在所有距离上均为负收益
+        // ─── V2 建仓规则 (2026-03-26) ───
+        // 1. BUY_YES 全面禁止（center 17.4%, near 0%, 全桶位系统性亏损）
+        // 2. BUY_NO 只允许 tail(dist>2) + near(1<dist≤2)
+        // 3. NO 入场价 ≥ 50%
+        // 4. 每城市每日最多 3 笔
         const distFromMu = Math.abs(k - mu);
         const bucketType = distFromMu > 2 ? 'tail' : (distFromMu > 1 ? 'near' : 'center');
         if(dir === 'BUY_YES'){
-          actions.push(`   ⛔ 禁止 ${st.name} ${date} ${title} BUY_YES ${bucketType}: 数据验证BUY_YES全桶位系统性亏损`);
+          // BUY_YES 全面禁止
+          continue;
+        }
+        if(bucketType === 'center'){
+          // BUY_NO center 48.6% 胜率不达标，禁止
+          continue;
+        }
+        if(noP < 0.50){
+          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO ${bucketType}: NO=${(noP*100).toFixed(0)}% < 50%下限`);
           continue;
         }
 
         // Skip if already have position in this slug
         if(pf.positions.some(p=>p.slug===mkt.slug)) continue;
 
-        // 优化: 同城市+同日期最多2笔，避免相关性过高
+        // V2: 每城市每日最多3笔（含已持仓 + 本轮新建）
         const sameCityDateCount = pf.positions.filter(p=>p.station===st.name && p.date===date).length;
-        if(sameCityDateCount >= 2){
-          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 同城同日持仓已达2笔上限`);
+        if(sameCityDateCount >= 3){
+          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 同城同日持仓已达3笔上限`);
           continue;
         }
 
-        // ─── 鱼身v2: 止损/平仓后当天禁止重入 ───
+        // ─── 暂停条件检查 ───
+        {
+          // 1. 连续3个结算日净亏损
+          const settledDates = [...new Set(pf.closedTrades.filter(t=>t.reason==='resolved').map(t=>t.date))].sort();
+          if(settledDates.length >= 3){
+            const last3 = settledDates.slice(-3);
+            const allNeg = last3.every(d => {
+              const dayPnl = pf.closedTrades.filter(t=>t.date===d && t.reason==='resolved').reduce((s,t)=>s+Number(t.pnl||0),0);
+              return dayPnl < 0;
+            });
+            if(allNeg){
+              actions.push(`   ⛔ 暂停建仓: 连续3个结算日净亏损 (${last3.join(', ')})`);
+              continue;
+            }
+          }
+          // 2. 累计 PnL 跌破 -$80
+          const totalPnl = pf.closedTrades.reduce((s,t)=>s+Number(t.pnl||0),0);
+          if(totalPnl < -80){
+            actions.push(`   ⛔ 暂停建仓: 累计PnL ${totalPnl.toFixed(2)} 跌破-$80`);
+            continue;
+          }
+          // 3. 最近7天胜率 < 65%（至少10笔才判断）
+          const weekAgo = new Date(now.getTime() - 7*86400000).toISOString();
+          const recentTrades = pf.closedTrades.filter(t=>(t.exitTime||'') >= weekAgo);
+          if(recentTrades.length >= 10){
+            const recentWins = recentTrades.filter(t=>Number(t.pnl||0)>0).length;
+            const recentWR = recentWins / recentTrades.length;
+            if(recentWR < 0.65){
+              actions.push(`   ⛔ 暂停建仓: 周胜率 ${(recentWR*100).toFixed(0)}% < 65% (${recentTrades.length}笔)`);
+              continue;
+            }
+          }
+        }
+
+        // 止损/平仓后当天禁止重入
         if(pf.stoppedToday[mkt.slug]){
           actions.push(`   ⛔ 禁止重入 ${st.name} ${date} ${title} ${dir}: 今天已平过该标的`);
           continue;
         }
 
-        // ─── 鱼身v3: 超大edge风控 ───
-        // 后天/更远标的如果edge大到离谱，优先视为模型可能过度自信，先跳过而不是直接建仓
-        const dayDiff = getLocalDayDiff(date, st);
-        if(dayDiff >= 2 && absEdge > 0.50){
-          actions.push(`   ⛔ 跳过 ${st.name} ${date} ${title} ${dir}: edge=${(absEdge*100).toFixed(1)}% 过大，疑似模型过度自信，等待下轮确认`);
-          continue;
-        }
-
-        // ─── 鱼身v2: 赔率位置过滤 ───
-        if(dir==='BUY_YES'){
-          if(yesP < 0.10 || yesP > 0.40){
-            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_YES: 赔率位置${(yesP*100).toFixed(0)}%不在舒适区(10-40%)`);
-            continue;
-          }
-        } else { // BUY_NO
-          if(noP < 0.10 || noP > 0.40){
-            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO: 赔率位置NO=${(noP*100).toFixed(0)}%不在舒适区(10-40%)`);
-            continue;
-          }
-        }
-
-        // ─── 第一轮优化: 单城市暴露上限 ───
-        const cityExposure = getCityExposure(pf, st.name);
-        const cityExposureLimit = pf.initialCapital * 0.6;
-        if(cityExposure >= cityExposureLimit){
-          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 城市暴露已达上限$${cityExposureLimit.toFixed(2)}`);
-          continue;
-        }
-
-        // ─── 第一轮优化: 主峰拥挤点过滤（精确温度主峰默认不做，除非edge≥30%） ───
-        if(isExactTempTitle(title) && peakK != null && k === peakK && absEdge < 0.30){
-          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 属于市场主峰拥挤点`);
-          continue;
-        }
-
-        // ─── 修复1: 建仓前检查METAR, 如果实测已确认则禁止建仓 ───
+        // ─── METAR 安全检查: 实测已确认则禁止建仓 ───
         if(metarTmax != null){
-          // BUY_NO on k°C: METAR已测到k°C → 禁止(人家都量到了你还赌"不是")
           if(dir==='BUY_NO' && metarTmax === k){
             actions.push(`   ⛔ 禁止建仓 ${st.name} ${date} ${title} BUY_NO: METAR已测到${metarTmax}°C, 不能赌"不是${k}°C"`);
-            continue;
-          }
-          // BUY_YES on k°C: METAR已超过k+1°C → 禁止(最高温肯定不止k°C了)
-          if(dir==='BUY_YES' && metarTmax > k + 1){
-            actions.push(`   ⛔ 禁止建仓 ${st.name} ${date} ${title} BUY_YES: METAR已测到${metarTmax}°C, 最高温已超过${k}°C`);
             continue;
           }
         }
@@ -1172,9 +1223,8 @@ async function main(){
         try{const bk=await getBook(tokenIds[0]);ba=parseBook(bk);}catch{}
         try{if(tokenIds[1]){const bkNo=await getBook(tokenIds[1]);baNo=parseBook(bkNo);}}catch{}
 
-        // Position sizing: max 15% of initial capital, max $15
-        const cityRemaining = Math.max(0, cityExposureLimit - cityExposure);
-        const budgetWant=Math.min(rules.maxSingleTrade, pf.cash*rules.maxPositionPct, cityRemaining);
+        // V2 Position sizing: 固定 $20/笔
+        const budgetWant = Math.min(20, pf.cash);
         if(budgetWant<2) continue;
 
         // Simulate actual fill against real orderbook
@@ -1195,7 +1245,7 @@ async function main(){
 
         const position={
           slug:mkt.slug, station:st.name, date, dayName, tempLabel:title, k,
-          dir, entryPrice:avgPrice,
+          dir, bucket: bucketType, entryPrice:avgPrice,
           shares, cost, entryTime:now.toISOString(),
           modelPAtEntry:Math.round(modelP*1000)/1000,
           yesPAtEntry:yesP,
@@ -1203,6 +1253,7 @@ async function main(){
           edgeAtEntry:Math.round(Math.abs(edge)*1000)/1000,
           forecastMaxAtEntry:forecastMax,
           muAtEntry:Math.round(mu*10)/10,
+          distFromMuAtEntry:Math.round(distFromMu*10)/10,
           fills:fill.fills, // detailed fill record
         };
         const reason=dir==='BUY_YES'
@@ -1214,26 +1265,19 @@ async function main(){
 
         if(OBSERVE_ONLY || dailyLossBreached || isTodayMarket){
           // 纯观察模式 或 当日回撤已达上限：只记录信号，不实际建仓
-          actions.push(`\n👁️ [观察] 信号: ${st.name} ${date}(${dayName}) ${title} ${dir}`);
-          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}%`);
-          actions.push(`   📊 天气: 风${wind}km/h 降水${precip}mm 云${cloud}% 湿度${humid}%`);
+          actions.push(`\n👁️ [观察] 信号: ${st.name} ${date}(${dayName}) ${title} ${dir} [${bucketType}]`);
+          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}%`);
           actions.push(`   💵 模拟成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
-          actions.push(`   📈 盘口: 买一${ba.bestBid} 卖一${ba.bestAsk} 价差${ba.spread?.toFixed(3)}`);
         } else {
           pf.positions.push(position);
           pf.cash-=cost;
           pf.cash=Math.round(pf.cash*100)/100;
-          actions.push(`\n🛒 买入: ${st.name} ${date}(${dayName}) ${title} ${dir}`);
-          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}%`);
-          actions.push(`   📊 天气: 风${wind}km/h 降水${precip}mm 云${cloud}% 湿度${humid}%`);
+          actions.push(`\n🛒 买入: ${st.name} ${date}(${dayName}) ${title} ${dir} [${bucketType}]`);
+          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}%`);
           actions.push(`   💵 实际成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
           if(fill.fills.length>1){
             actions.push(`   📖 逐档吃单: ${fill.fills.map(f=>`${f.shares}股@${(f.price*100).toFixed(1)}%=$${f.cost}`).join(' → ')}`);
           }
-          if(fill.worstPrice!==fill.fills[0]?.price){
-            actions.push(`   ⚠️ 滑点: 最优${(fill.fills[0]?.price*100).toFixed(1)}% → 最差${(fill.worstPrice*100).toFixed(1)}%`);
-          }
-          actions.push(`   📈 盘口: 买一${ba.bestBid} 卖一${ba.bestAsk} 价差${ba.spread?.toFixed(3)}`);
         }
         cityBought++;
       }
