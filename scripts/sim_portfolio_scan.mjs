@@ -1017,10 +1017,15 @@ async function main(){
               const modelProb = dist[k] || 0;
               let marketYes = null;
               try{ const px=JSON.parse(em.outcomePrices||'[]'); marketYes=Number(px[0]||0); }catch{}
+              const distFromMu = Math.round(Math.abs(k - mu)*10)/10;
+              const bucket = distFromMu > 2 ? 'tail' : (distFromMu > 1 ? 'near' : 'center');
               bins[k] = {
                 model: Math.round(modelProb*1000)/1000,
-                market: marketYes!=null ? Math.round(marketYes*1000)/1000 : null,
-                edge: marketYes!=null ? Math.round((modelProb - marketYes)*1000)/1000 : null
+                yesP: marketYes!=null ? Math.round(marketYes*1000)/1000 : null,
+                noP: marketYes!=null ? Math.round((1-marketYes)*1000)/1000 : null,
+                edge: marketYes!=null ? Math.round((modelProb - marketYes)*1000)/1000 : null,
+                dist: distFromMu,
+                bucket,
               };
             }
           }
