@@ -35,10 +35,13 @@
 - minEdge = 0.15（15%），不是 MEMORY 之前写的 20%
 - **sigma 机制已升级为按城市独立 sigma，不再使用单一全局 0.8/1.0/1.5：**
   - 基础 sigma 来自 `data/forecast_error_30d.json` 的城市级 29 天回测结果（如 Seoul 1.7、Shanghai 1.2、London 0.6、Chicago 3.1 等）
-  - 当天使用 `citySigma × 0.6`
-  - 明天使用 `citySigma × 1.0`
-  - 后天使用 `citySigma × 1.3`
-  - **但当前 full scan 只扫今天+明天，所以后天 ×1.3 虽已写入代码，暂未在线上实际触发**
+  - ~~当天使用 `citySigma × 0.6` / 明天使用 `citySigma × 1.0` / 后天使用 `citySigma × 1.3`~~ **已过时**
+  - **2026-03-26 更新（sigma 2x）**：当天 `citySigma × 1.2` / 明天 `citySigma × 2.0` / 后天 `citySigma × 2.6`
+  - 原因：数据验证 forecast center drift 远超原 sigma（大多数城市 2-3.5 倍），原参数严重低估不确定性
+  - **当前 full scan 只扫今天+明天，后天 ×2.6 虽已写入代码，暂未在线上实际触发**
+- **2026-03-26 新增建仓禁令：BUY_YES center 永久禁止建仓**
+  - 条件: `dir === 'BUY_YES' && |k - mu| <= 2`
+  - 原因: 115 笔回测胜率 17.4%，累计 PnL -426.59，系统性亏损
 - 汇报必须基于脚本实时数据，不靠记忆文件
 
 ## 核心认知：目标不是预报准，是精准契合 WU 结算数据
@@ -146,9 +149,14 @@
 5. **市场没有向模型收敛**：不能依赖"市场迟早会修正"
 
 #### 执行决策（2026-03-26 鹏哥确认）
-1. **立即禁止 BUY_YES center 建仓**（即使恢复交易也不碰）
-2. **sigma 上调到 2x**（待实施到代码）
-3. **BUY_NO tail 作为唯一明确正收益方向**，执行方式优化为被动挂单
+1. ✅ **禁止 BUY_YES center 建仓** — 已实施到代码，commit `6babf3b`
+   - 在建仓逻辑里加了 `dir === 'BUY_YES' && |k-mu| <= 2` 过滤
+2. ✅ **sigma 上调到 2x** — 已实施到代码，commit `6babf3b`
+   - day0: `citySigma × 0.6` → `citySigma × 1.2`
+   - day1: `citySigma × 1.0` → `citySigma × 2.0`
+   - day2+: `citySigma × 1.3` → `citySigma × 2.6`
+   - 验证: Warsaw day1 sigma=2.2(1.1×2.0), Madrid day0=1.08(0.9×1.2), Madrid day1=1.8(0.9×2.0) ✅
+3. **BUY_NO tail 作为唯一明确正收益方向**，执行方式优化为被动挂单（待实施）
 4. **BUY_NO center 继续观察**，等 sigma 调整后看信号质量变化
 5. **观察模式继续保持**，不急于恢复交易
 
