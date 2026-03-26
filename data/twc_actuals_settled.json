@@ -1,0 +1,278 @@
+{
+  "Chicago|2026-03-21": {
+    "maxC": 25,
+    "maxF": 77
+  },
+  "Chicago|2026-03-22": {
+    "maxC": 21,
+    "maxF": 70
+  },
+  "Chicago|2026-03-23": {
+    "maxC": 5,
+    "maxF": 41
+  },
+  "Chicago|2026-03-24": {
+    "maxC": 11,
+    "maxF": 52
+  },
+  "Chicago|2026-03-25": {
+    "maxC": 22,
+    "maxF": 72
+  },
+  "Dallas|2026-03-21": {
+    "maxC": 32,
+    "maxF": 90
+  },
+  "Dallas|2026-03-22": {
+    "maxC": 34,
+    "maxF": 93
+  },
+  "Dallas|2026-03-23": {
+    "maxC": 26,
+    "maxF": 79
+  },
+  "Dallas|2026-03-24": {
+    "maxC": 28,
+    "maxF": 82
+  },
+  "Dallas|2026-03-25": {
+    "maxC": 29,
+    "maxF": 84
+  },
+  "London|2026-03-21": {
+    "maxC": 14,
+    "maxF": 57
+  },
+  "London|2026-03-22": {
+    "maxC": 12,
+    "maxF": 54
+  },
+  "London|2026-03-23": {
+    "maxC": 15,
+    "maxF": 59
+  },
+  "London|2026-03-24": {
+    "maxC": 13,
+    "maxF": 55
+  },
+  "London|2026-03-25": {
+    "maxC": 10,
+    "maxF": 50
+  },
+  "Lucknow|2026-03-21": {
+    "maxC": 25,
+    "maxF": 77
+  },
+  "Lucknow|2026-03-22": {
+    "maxC": 30,
+    "maxF": 86
+  },
+  "Lucknow|2026-03-23": {
+    "maxC": 30,
+    "maxF": 86
+  },
+  "Lucknow|2026-03-24": {
+    "maxC": 32,
+    "maxF": 90
+  },
+  "Lucknow|2026-03-25": {
+    "maxC": 33,
+    "maxF": 91
+  },
+  "Madrid|2026-03-22": {
+    "maxC": 19,
+    "maxF": 66
+  },
+  "Madrid|2026-03-23": {
+    "maxC": 17,
+    "maxF": 63
+  },
+  "Madrid|2026-03-24": {
+    "maxC": 18,
+    "maxF": 64
+  },
+  "Madrid|2026-03-25": {
+    "maxC": 22,
+    "maxF": 72
+  },
+  "Miami|2026-03-21": {
+    "maxC": 26,
+    "maxF": 79
+  },
+  "Miami|2026-03-22": {
+    "maxC": 27,
+    "maxF": 81
+  },
+  "Miami|2026-03-23": {
+    "maxC": 27,
+    "maxF": 81
+  },
+  "Miami|2026-03-24": {
+    "maxC": 29,
+    "maxF": 84
+  },
+  "Miami|2026-03-25": {
+    "maxC": 27,
+    "maxF": 81
+  },
+  "Milan|2026-03-21": {
+    "maxC": 16,
+    "maxF": 61
+  },
+  "NYC|2026-03-21": {
+    "maxC": 14,
+    "maxF": 57
+  },
+  "NYC|2026-03-22": {
+    "maxC": 12,
+    "maxF": 54
+  },
+  "NYC|2026-03-23": {
+    "maxC": 10,
+    "maxF": 50
+  },
+  "NYC|2026-03-24": {
+    "maxC": 7,
+    "maxF": 45
+  },
+  "NYC|2026-03-25": {
+    "maxC": 8,
+    "maxF": 46
+  },
+  "Paris|2026-03-21": {
+    "maxC": 16,
+    "maxF": 61
+  },
+  "Paris|2026-03-22": {
+    "maxC": 15,
+    "maxF": 59
+  },
+  "Paris|2026-03-23": {
+    "maxC": 16,
+    "maxF": 61
+  },
+  "Paris|2026-03-24": {
+    "maxC": 19,
+    "maxF": 66
+  },
+  "Paris|2026-03-25": {
+    "maxC": 13,
+    "maxF": 55
+  },
+  "Seattle|2026-03-22": {
+    "maxC": 11,
+    "maxF": 52
+  },
+  "Seattle|2026-03-23": {
+    "maxC": 10,
+    "maxF": 50
+  },
+  "Seattle|2026-03-24": {
+    "maxC": 12,
+    "maxF": 54
+  },
+  "Seattle|2026-03-25": {
+    "maxC": 11,
+    "maxF": 52
+  },
+  "Seoul|2026-03-21": {
+    "maxC": 11,
+    "maxF": 52
+  },
+  "Seoul|2026-03-22": {
+    "maxC": 16,
+    "maxF": 61
+  },
+  "Seoul|2026-03-23": {
+    "maxC": 15,
+    "maxF": 59
+  },
+  "Seoul|2026-03-24": {
+    "maxC": 14,
+    "maxF": 57
+  },
+  "Seoul|2026-03-25": {
+    "maxC": 13,
+    "maxF": 55
+  },
+  "Shanghai|2026-03-21": {
+    "maxC": 14,
+    "maxF": 57
+  },
+  "Shanghai|2026-03-22": {
+    "maxC": 18,
+    "maxF": 64
+  },
+  "Shanghai|2026-03-23": {
+    "maxC": 16,
+    "maxF": 61
+  },
+  "Shanghai|2026-03-24": {
+    "maxC": 14,
+    "maxF": 57
+  },
+  "Shanghai|2026-03-25": {
+    "maxC": 16,
+    "maxF": 61
+  },
+  "Toronto|2026-03-21": {
+    "maxC": 3,
+    "maxF": 37
+  },
+  "Toronto|2026-03-22": {
+    "maxC": 5,
+    "maxF": 41
+  },
+  "Toronto|2026-03-23": {
+    "maxC": 2,
+    "maxF": 36
+  },
+  "Toronto|2026-03-24": {
+    "maxC": 4,
+    "maxF": 39
+  },
+  "Toronto|2026-03-25": {
+    "maxC": 6,
+    "maxF": 43
+  },
+  "Warsaw|2026-03-21": {
+    "maxC": 11,
+    "maxF": 52
+  },
+  "Warsaw|2026-03-22": {
+    "maxC": 15,
+    "maxF": 59
+  },
+  "Warsaw|2026-03-23": {
+    "maxC": 15,
+    "maxF": 59
+  },
+  "Warsaw|2026-03-24": {
+    "maxC": 16,
+    "maxF": 61
+  },
+  "Warsaw|2026-03-25": {
+    "maxC": 16,
+    "maxF": 61
+  },
+  "Wellington|2026-03-21": {
+    "maxC": 17,
+    "maxF": 63
+  },
+  "Wellington|2026-03-22": {
+    "maxC": 20,
+    "maxF": 68
+  },
+  "Wellington|2026-03-23": {
+    "maxC": 19,
+    "maxF": 66
+  },
+  "Wellington|2026-03-24": {
+    "maxC": 21,
+    "maxF": 70
+  },
+  "Wellington|2026-03-25": {
+    "maxC": 18,
+    "maxF": 64
+  }
+}
