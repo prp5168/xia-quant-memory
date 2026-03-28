@@ -10,6 +10,7 @@ import { existsSync } from 'node:fs';
 
 const TWC_API_KEY = 'e1f10a1e78da46f5b10a1e78da96f525';
 const PORTFOLIO_PATH = 'data/portfolio.json';
+const YES_EXPERIMENT_PATH = 'data/portfolio_yes_experiment.json';
 const WATCHLIST_PATH = 'data/watchlist.json';
 
 // ─── Watchlist persistence ─────────────────────────────────
@@ -298,23 +299,65 @@ function getSummaryAccounting(pf){
   };
 }
 
+async function loadYesExperimentPortfolio(){
+  try{
+    return JSON.parse(await readFile(YES_EXPERIMENT_PATH,'utf8'));
+  }catch{
+    const init={
+      initialCapital:100,
+      cash:100,
+      totalPnl:0,
+      positions:[],
+      closedTrades:[],
+      rules:{
+        enabled:true,
+        strategy:'buy_yes_center_day1_experiment',
+        maxSingleTrade:5,
+        minEdge:0.15,
+        yesPriceMin:0.10,
+        yesPriceMax:0.40,
+        maxOpenPositions:6,
+        maxCityPerDay:1,
+        tpEdgeCapture:0.40,
+        allowedBuckets:['center'],
+        allowedDirs:['BUY_YES'],
+        dayDiff:1
+      },
+      stoppedToday:{},
+      updatedAt:new Date().toISOString(),
+    };
+    await writeFile(YES_EXPERIMENT_PATH, JSON.stringify(init,null,2),'utf8');
+    return init;
+  }
+}
+
+async function savePortfolio(path, pf){
+  pf.updatedAt = new Date().toISOString();
+  await writeFile(path, JSON.stringify(pf,null,2),'utf8');
+}
+
 // ─── Main ──────────────────────────────────────────────────
 async function main(){
   const now=new Date();
   const pf=JSON.parse(await readFile(PORTFOLIO_PATH,'utf8'));
+  const yesPf=await loadYesExperimentPortfolio();
   const rules=pf.rules;
+  const yesRules=yesPf.rules||{};
   const actions=[]; // will be output as notifications
   const observeSnapshots=[]; // 概率路径观察记录
   const forecastLogs=[]; // TWC预报记录（用于积累预报误差数据）
 
   // Initialize stopped tracker (24-hour rolling cooldown)
   if(!pf.stoppedToday) pf.stoppedToday = {};
+  if(!yesPf.stoppedToday) yesPf.stoppedToday = {};
   const todayStr = now.toISOString().slice(0,10);
   const cooldownMs = 24 * 60 * 60 * 1000; // 24 hours
   // Clean entries older than 24 hours
-  for(const key of Object.keys(pf.stoppedToday)){
-    const ts = new Date(pf.stoppedToday[key]).getTime();
-    if(now.getTime() - ts > cooldownMs) delete pf.stoppedToday[key];
+  for(const tracker of [pf.stoppedToday, yesPf.stoppedToday]){
+    for(const key of Object.keys(tracker)){
+      const ts = new Date(tracker[key]).getTime();
+      if(now.getTime() - ts > cooldownMs) delete tracker[key];
+    }
   }
 
   // ─── 单日回撤控制：当日已实现亏损超过总仓位10%则暂停建仓 ───
@@ -324,7 +367,8 @@ async function main(){
   const dailyLossBreached = todayClosedPnl < -maxDailyLoss;
 
   actions.push(`🎲 模拟盘扫描 | ${now.toISOString()} | 资金$${pf.cash.toFixed(2)}/${pf.initialCapital} | 模式:${SCAN_MODE}${dailyLossBreached?' ⛔当日回撤已达上限':''}${OBSERVE_ONLY?' 👁️观察':''}`);
-  if(pf.positions.length) actions.push(`📦 持仓${pf.positions.length}个`);
+  if(pf.positions.length) actions.push(`📦 BUY_NO主盘持仓${pf.positions.length}个`);
+  if(yesPf.positions.length) actions.push(`🧪 BUY_YES实验盘持仓${yesPf.positions.length}个`);
 
   // ─── Phase 1: Check existing positions for SELL/STOP-LOSS ───
   const prevForecastCache={};
@@ -911,6 +955,57 @@ async function main(){
     actions.push(`📊 持仓: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | 入${(pos.entryPrice*100).toFixed(1)}% 现${(currentYesP*100).toFixed(1)}% 模型${(modelP*100).toFixed(1)}% | edge=${(currentEdge*100).toFixed(1)}%`);
   }
 
+  // ─── Phase 1B: Check BUY_YES experiment positions ───────
+  for(let pi=yesPf.positions.length-1;pi>=0;pi--){
+    const pos=yesPf.positions[pi];
+    let currentYesP=null, ba={};
+    try{
+      const mkt=await fetchJSON(`https://gamma-api.polymarket.com/markets?slug=${encodeURIComponent(pos.slug)}`);
+      const m=mkt[0];
+      if(m){
+        const px=JSON.parse(m.outcomePrices||'[]');
+        currentYesP=Number(px[0]||0);
+        if(m.closed){
+          const resolved=currentYesP>0.95?1:(currentYesP<0.05?0:currentYesP);
+          const exitVal=resolved*pos.shares;
+          const realPnl=exitVal-pos.cost;
+          yesPf.cash+=exitVal;
+          yesPf.totalPnl=(yesPf.totalPnl||0)+realPnl;
+          yesPf.closedTrades.push({...pos, exitPrice:resolved, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:'resolved'});
+          yesPf.positions.splice(pi,1);
+          actions.push(`🏁 [YES实验] 结算: ${pos.station} ${pos.tempLabel} | 成本$${pos.cost.toFixed(2)} 回收$${exitVal.toFixed(2)} PnL=$${realPnl.toFixed(2)}`);
+          continue;
+        }
+        const tokenIds=JSON.parse(m.clobTokenIds||'[]');
+        try{const bk=await getBook(tokenIds[0]);ba=parseBook(bk);}catch{}
+      }
+    }catch{}
+    if(currentYesP==null) continue;
+
+    const targetYes=Math.min((pos.yesPAtEntry||pos.entryPrice) + (pos.entryEdgeAtEntry||pos.edgeAtEntry||0) * (yesRules.tpEdgeCapture||0.4), 0.99);
+    if(currentYesP >= targetYes){
+      const sellFill = ba.simulateFill ? ba.simulateFill('bid', pos.shares * (ba.bestBid||currentYesP||0.01)) : null;
+      let exitPrice=currentYesP, exitVal=0;
+      if(sellFill && sellFill.filled){
+        const exitShares=Math.min(sellFill.shares, pos.shares);
+        exitPrice=sellFill.avgPrice || currentYesP;
+        exitVal=exitShares*exitPrice;
+      }else{
+        exitPrice=ba.bestBid||currentYesP||0;
+        exitVal=pos.shares*exitPrice;
+      }
+      const realPnl=exitVal-pos.cost;
+      yesPf.cash+=exitVal;
+      yesPf.totalPnl=(yesPf.totalPnl||0)+realPnl;
+      yesPf.closedTrades.push({...pos, exitPrice, exitTime:now.toISOString(), pnl:Math.round(realPnl*100)/100, reason:'yes_experiment_tp40'});
+      yesPf.stoppedToday[pos.slug]=now.toISOString();
+      yesPf.positions.splice(pi,1);
+      actions.push(`🎯 [YES实验] 止盈: ${pos.station} ${pos.date} ${pos.tempLabel} | 入${((pos.yesPAtEntry||pos.entryPrice)*100).toFixed(1)}% 出${(exitPrice*100).toFixed(1)}% 目标${(targetYes*100).toFixed(1)}% | PnL=$${realPnl.toFixed(2)}`);
+      continue;
+    }
+    actions.push(`🧪 持仓: ${pos.station} ${pos.date} ${pos.tempLabel} BUY_YES | 入${((pos.yesPAtEntry||pos.entryPrice)*100).toFixed(1)}% 现${(currentYesP*100).toFixed(1)}% TP@${(targetYes*100).toFixed(1)}%`);
+  }
+
   // ─── Phase 2: Scan for new BUY opportunities ────────────
   if(dailyLossBreached && !OBSERVE_ONLY){
     actions.push(`\n⛔ 当日已实现亏损$${Math.abs(todayClosedPnl).toFixed(2)} 超过上限$${maxDailyLoss.toFixed(2)}(总仓位10%), 暂停新建仓`);
@@ -1161,34 +1256,48 @@ async function main(){
 
         if(absEdge<rules.minEdge){ citySkippedEdge++; continue; }
 
-        // ─── V2 建仓规则 (2026-03-26) ───
-        // 1. BUY_YES 全面禁止（center 17.4%, near 0%, 全桶位系统性亏损）
-        // 2. BUY_NO 只允许 tail(dist>2) + near(1<dist≤2)
-        // 3. NO 入场价 ≥ 50%
-        // 4. 每城市每日最多 3 笔
+        // ─── 主盘 + BUY_YES实验盘 建仓规则 ───
         const distFromMu = Math.abs(k - mu);
         const bucketType = distFromMu > 2 ? 'tail' : (distFromMu > 1 ? 'near' : 'center');
-        if(dir === 'BUY_YES'){
-          // BUY_YES 全面禁止
-          continue;
-        }
-        if(bucketType === 'center'){
-          // BUY_NO center 48.6% 胜率不达标，禁止
-          continue;
-        }
-        if(noP < rules.minNoPrice){
-          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO ${bucketType}: NO=${(noP*100).toFixed(0)}% < ${(rules.minNoPrice*100).toFixed(0)}%下限`);
+        const localDayDiff = getLocalDayDiff(date, st);
+        const isYesExperimentCandidate = yesRules.enabled
+          && dir === 'BUY_YES'
+          && bucketType === 'center'
+          && localDayDiff === (yesRules.dayDiff ?? 1)
+          && yesP >= (yesRules.yesPriceMin ?? 0.10)
+          && yesP <= (yesRules.yesPriceMax ?? 0.40);
+        const isMainNoCandidate = dir === 'BUY_NO'
+          && bucketType !== 'center'
+          && noP >= rules.minNoPrice;
+
+        if(!isMainNoCandidate && !isYesExperimentCandidate){
+          if(dir==='BUY_NO' && bucketType==='center') continue;
+          if(dir==='BUY_NO' && noP < rules.minNoPrice){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO ${bucketType}: NO=${(noP*100).toFixed(0)}% < ${(rules.minNoPrice*100).toFixed(0)}%下限`);
+          }
           continue;
         }
 
-        // Skip if already have position in this slug
-        if(pf.positions.some(p=>p.slug===mkt.slug)) continue;
+        // Skip if already have position in either book
+        if(pf.positions.some(p=>p.slug===mkt.slug) || yesPf.positions.some(p=>p.slug===mkt.slug)) continue;
 
-        // V2: 每城市每日最多3笔（含已持仓 + 本轮新建）
-        const sameCityDateCount = pf.positions.filter(p=>p.station===st.name && p.date===date).length;
-        if(sameCityDateCount >= 3){
-          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 同城同日持仓已达3笔上限`);
-          continue;
+        if(isMainNoCandidate){
+          const sameCityDateCount = pf.positions.filter(p=>p.station===st.name && p.date===date).length;
+          if(sameCityDateCount >= (rules.maxCityPerDay ?? 3)){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 同城同日持仓已达${rules.maxCityPerDay ?? 3}笔上限`);
+            continue;
+          }
+        }
+        if(isYesExperimentCandidate){
+          if(yesPf.positions.length >= (yesRules.maxOpenPositions ?? 6)){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_YES实验: 实验盘持仓已达${yesRules.maxOpenPositions ?? 6}笔上限`);
+            continue;
+          }
+          const sameCityDateCountYes = yesPf.positions.filter(p=>p.station===st.name && p.date===date).length;
+          if(sameCityDateCountYes >= (yesRules.maxCityPerDay ?? 1)){
+            actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_YES实验: 同城同日已达${yesRules.maxCityPerDay ?? 1}笔上限`);
+            continue;
+          }
         }
 
         // ─── 暂停条件检查 ───
@@ -1226,8 +1335,8 @@ async function main(){
         }
 
         // 止损/平仓后当天禁止重入
-        if(pf.stoppedToday[mkt.slug]){
-          actions.push(`   ⛔ 禁止重入 ${st.name} ${date} ${title} ${dir}: 今天已平过该标的`);
+        if(pf.stoppedToday[mkt.slug] || yesPf.stoppedToday[mkt.slug]){
+          actions.push(`   ⛔ 禁止重入 ${st.name} ${date} ${title} ${dir}: 今天已在主盘/实验盘平过该标的`);
           continue;
         }
 
@@ -1245,8 +1354,10 @@ async function main(){
         try{const bk=await getBook(tokenIds[0]);ba=parseBook(bk);}catch{}
         try{if(tokenIds[1]){const bkNo=await getBook(tokenIds[1]);baNo=parseBook(bkNo);}}catch{}
 
-        // V2 Position sizing: 固定 $20/笔
-        const budgetWant = Math.min(20, pf.cash);
+        // Position sizing: 主盘/实验盘各自读取规则
+        const targetPf = isYesExperimentCandidate ? yesPf : pf;
+        const budgetCap = isYesExperimentCandidate ? (yesRules.maxSingleTrade ?? 5) : (rules.maxSingleTrade ?? 10);
+        const budgetWant = Math.min(budgetCap, targetPf.cash);
         if(budgetWant<2) continue;
 
         // Simulate actual fill against real orderbook
@@ -1285,17 +1396,23 @@ async function main(){
         // Add signal city+date to watchlist for continued tracking
         addToWatchlist(watchlist, st.name, date, `signal-edge-${(Math.abs(edge)*100).toFixed(0)}pct`);
 
-        if(OBSERVE_ONLY || dailyLossBreached || isTodayMarket){
+        if(OBSERVE_ONLY || dailyLossBreached || (isTodayMarket && !isYesExperimentCandidate)){
           // 纯观察模式 或 当日回撤已达上限：只记录信号，不实际建仓
-          actions.push(`\n👁️ [观察] 信号: ${st.name} ${date}(${dayName}) ${title} ${dir} [${bucketType}]`);
-          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}%`);
+          actions.push(`
+👁️ [观察] 信号: ${st.name} ${date}(${dayName}) ${title} ${dir} [${bucketType}]`);
+          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}% YES=${(yesP*100).toFixed(0)}%`);
           actions.push(`   💵 模拟成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
         } else {
-          pf.positions.push(position);
-          pf.cash-=cost;
-          pf.cash=Math.round(pf.cash*100)/100;
-          actions.push(`\n🛒 买入: ${st.name} ${date}(${dayName}) ${title} ${dir} [${bucketType}]`);
-          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}%`);
+          const targetBookLabel = isYesExperimentCandidate ? '[YES实验]' : '';
+          position.entryEdgeAtEntry = Math.round(Math.abs(edge)*1000)/1000;
+          position.tpTargetYes = isYesExperimentCandidate ? Math.min(yesP + Math.abs(edge) * (yesRules.tpEdgeCapture ?? 0.4), 0.99) : undefined;
+          targetPf.positions.push(position);
+          targetPf.cash-=cost;
+          targetPf.cash=Math.round(targetPf.cash*100)/100;
+          actions.push(`
+🛒 ${targetBookLabel}买入: ${st.name} ${date}(${dayName}) ${title} ${dir} [${bucketType}]`);
+          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}% YES=${(yesP*100).toFixed(0)}%`);
+          if(isYesExperimentCandidate) actions.push(`   🧪 规则: dayDiff=${localDayDiff} | YES区间${((yesRules.yesPriceMin ?? 0.1)*100).toFixed(0)}-${((yesRules.yesPriceMax ?? 0.4)*100).toFixed(0)}% | TP目标${(position.tpTargetYes*100).toFixed(1)}%`);
           actions.push(`   💵 实际成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
           if(fill.fills.length>1){
             actions.push(`   📖 逐档吃单: ${fill.fills.map(f=>`${f.shares}股@${(f.price*100).toFixed(1)}%=$${f.cost}`).join(' → ')}`);
@@ -1337,8 +1454,8 @@ async function main(){
   }
 
   // ─── Save & Output ──────────────────────────────────────
-  pf.updatedAt=now.toISOString();
-  await writeFile(PORTFOLIO_PATH, JSON.stringify(pf,null,2),'utf8');
+  await savePortfolio(PORTFOLIO_PATH, pf);
+  await savePortfolio(YES_EXPERIMENT_PATH, yesPf);
 
   // Summary (use orderbook liquidation value)
   let posVal = 0;
@@ -1348,18 +1465,29 @@ async function main(){
   posVal = Math.round(posVal * 100) / 100;
   const { cash: summaryCash, realizedPnl } = getSummaryAccounting(pf);
 
-  const actionKeywords = ['🛒 买入', '🚨 止损', '💰 卖出', '🎯 止盈', '⏰ 分层止盈', '🏁 结算', '📥 补仓'];
-  const compactActionLines = actions.filter(line => actionKeywords.some(k => line.includes(k)) || line.includes('💡 逻辑:'));
+  const actionKeywords = ['🛒 买入', '🚨 止损', '💰 卖出', '🎯 止盈', '⏰ 分层止盈', '🏁 结算', '📥 补仓', '[YES实验]'];
+  const compactActionLines = actions.filter(line => actionKeywords.some(k => line.includes(k)) || line.includes('💡 逻辑:') || line.includes('🧪 规则:'));
   const totalAssets = summaryCash + posVal;
   const totalPnl = totalAssets - Number(pf.initialCapital || 0);
   const unrealizedPnl = totalPnl - realizedPnl;
   const modeLabel = OBSERVE_ONLY ? `${SCAN_MODE}👁️观察` : SCAN_MODE;
-  const summaryLine = `📌 ${modeLabel}｜持仓${pf.positions.length}个｜现金$${summaryCash.toFixed(2)}｜可平资产$${posVal.toFixed(2)}｜总资产$${totalAssets.toFixed(2)}｜已实现$${realizedPnl.toFixed(2)}｜浮动$${unrealizedPnl.toFixed(2)}｜总PnL $${totalPnl.toFixed(2)}｜已平仓${pf.closedTrades.length}笔`;
+  const summaryLine = `📌 ${modeLabel}｜BUY_NO持仓${pf.positions.length}个｜现金$${summaryCash.toFixed(2)}｜可平资产$${posVal.toFixed(2)}｜总资产$${totalAssets.toFixed(2)}｜已实现$${realizedPnl.toFixed(2)}｜浮动$${unrealizedPnl.toFixed(2)}｜总PnL $${totalPnl.toFixed(2)}｜已平仓${pf.closedTrades.length}笔`;
+
+  let yesPosVal = 0;
+  for(const p of yesPf.positions){
+    yesPosVal += await estimateLiquidationValue(p);
+  }
+  yesPosVal = Math.round(yesPosVal * 100) / 100;
+  const { cash: yesCash, realizedPnl: yesRealizedPnl } = getSummaryAccounting(yesPf);
+  const yesTotalAssets = yesCash + yesPosVal;
+  const yesTotalPnl = yesTotalAssets - Number(yesPf.initialCapital || 0);
+  const yesUnrealizedPnl = yesTotalPnl - yesRealizedPnl;
+  const yesSummaryLine = `🧪 YES实验｜持仓${yesPf.positions.length}个｜现金$${yesCash.toFixed(2)}｜可平资产$${yesPosVal.toFixed(2)}｜总资产$${yesTotalAssets.toFixed(2)}｜已实现$${yesRealizedPnl.toFixed(2)}｜浮动$${yesUnrealizedPnl.toFixed(2)}｜总PnL $${yesTotalPnl.toFixed(2)}｜已平仓${yesPf.closedTrades.length}笔`;
 
   if(compactActionLines.length === 0){
-    console.log(`无动作｜${summaryLine}`);
+    console.log(`无动作｜${summaryLine}\n${yesSummaryLine}`);
   } else {
-    console.log([summaryLine, ...compactActionLines].join('\n'));
+    console.log([summaryLine, yesSummaryLine, ...compactActionLines].join('\n'));
   }
 }
 

@@ -1,0 +1,27 @@
+{
+  "initialCapital": 100,
+  "cash": 100,
+  "totalPnl": 0,
+  "positions": [],
+  "closedTrades": [],
+  "rules": {
+    "enabled": true,
+    "strategy": "buy_yes_center_day1_experiment",
+    "maxSingleTrade": 5,
+    "minEdge": 0.15,
+    "yesPriceMin": 0.1,
+    "yesPriceMax": 0.4,
+    "maxOpenPositions": 6,
+    "maxCityPerDay": 1,
+    "tpEdgeCapture": 0.4,
+    "allowedBuckets": [
+      "center"
+    ],
+    "allowedDirs": [
+      "BUY_YES"
+    ],
+    "dayDiff": 1
+  },
+  "stoppedToday": {},
+  "updatedAt": "2026-03-28T09:03:36.906Z"
+}
