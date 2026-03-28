@@ -105,6 +105,8 @@ const CITY_SIGMA = {
   'Atlanta':       2.0,
   'Houston':       2.5,
   'Denver':        3.0,
+  'Austin':        2.5,
+  'Istanbul':      1.5,
 };
 
 function getSigmaForDate(targetDateStr, station, baseSigma){
@@ -146,6 +148,8 @@ const STATIONS = [
   { name: 'Atlanta', icao: 'KATL', geocode: '33.640,-84.427', metarId: 'KATL', tz: 'America/New_York', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'atlanta-daily-weather' },
   { name: 'Houston', icao: 'KIAH', geocode: '29.990,-95.336', metarId: 'KIAH', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'houston-daily-weather' },
   { name: 'Denver', icao: 'KDEN', geocode: '39.856,-104.676', metarId: 'KDEN', tz: 'America/Denver', utcOffset: -6, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'denver-daily-weather' },
+  { name: 'Austin', icao: 'KAUS', geocode: '30.194,-97.670', metarId: 'KAUS', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'austin-daily-weather' },
+  { name: 'Istanbul', icao: 'LTFM', geocode: '41.275,28.752', metarId: 'LTFM', tz: 'Europe/Istanbul', utcOffset: 3, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'istanbul-daily-weather' },
 ];
 
 // ─── Math ──────────────────────────────────────────────────
