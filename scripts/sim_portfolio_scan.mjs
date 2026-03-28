@@ -280,12 +280,12 @@ async function estimateLiquidationValue(pos){
     if(pos.dir==='BUY_YES'){
       const bk=await getBook(tokenIds[0]);
       const ba=parseBook(bk);
-      const px=ba.bestBid ?? ba.mid ?? 0;
+      const px=ba.bestBid ?? 0;
       return Math.round(pos.shares * px * 100)/100;
     }
     const bkNo=await getBook(tokenIds[1]);
     const baNo=parseBook(bkNo);
-    const px=baNo.bestBid ?? baNo.mid ?? 0;
+    const px=baNo.bestBid ?? 0;
     return Math.round(pos.shares * px * 100)/100;
   }catch{
     return Math.round((Number(pos.cost)||0)*100)/100;
@@ -591,7 +591,7 @@ async function main(){
           const exitSharesE = Math.min(slFillE.shares, pos.shares);
           if(pos.dir==='BUY_YES') exitValE = exitSharesE * exitPriceE;
           else exitValE = exitSharesE * exitPriceE;
-        } else { exitPriceE = ba.mid || currentYesP; exitValE = pos.dir==='BUY_YES' ? pos.shares*exitPriceE : pos.shares*exitPriceE; }
+        } else { exitPriceE = 0; exitValE = 0; actions.push(`⚠️ 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} 预报漂移止损信号出现，但盘口无法成交，继续持仓等待下一轮`); continue; }
         const realPnlE = exitValE - pos.cost;
         pf.cash += exitValE;
         pf.totalPnl += realPnlE;
@@ -617,8 +617,8 @@ async function main(){
           exitPriceN = tpFillN.avgPrice;
           exitValN = exitSharesN * exitPriceN;
         } else {
-          exitPriceN = currentNoForTP;
-          exitValN = pos.shares * exitPriceN;
+          actions.push(`⚠️ 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} NEAR止盈触发，但NO盘口无法成交，继续持仓等待下一轮`);
+          continue;
         }
         const realPnlN = exitValN - pos.cost;
         pf.cash += exitValN;
@@ -638,8 +638,8 @@ async function main(){
           exitPriceSL = slFillN.avgPrice;
           exitValSL = Math.min(slFillN.shares, pos.shares) * exitPriceSL;
         } else {
-          exitPriceSL = currentNoForTP;
-          exitValSL = pos.shares * exitPriceSL;
+          actions.push(`⚠️ 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} NEAR止损触发，但NO盘口无法成交，继续持仓等待下一轮`);
+          continue;
         }
         const realPnlSL = exitValSL - pos.cost;
         pf.cash += exitValSL;
@@ -667,9 +667,8 @@ async function main(){
         if(pos.dir==='BUY_YES') exitVal0 = exitShares0 * exitPrice0;
         else exitVal0 = exitShares0 * exitPrice0;
       } else {
-        exitPrice0 = ba.mid || currentYesP;
-        if(pos.dir==='BUY_YES') exitVal0 = pos.shares * exitPrice0;
-        else exitVal0 = pos.shares * exitPrice0;
+        actions.push(`⚠️ 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} 模型翻转止损触发，但盘口无法成交，继续持仓等待下一轮`);
+        continue;
       }
       const realPnl0 = exitVal0 - pos.cost;
       pf.cash += exitVal0;
@@ -715,8 +714,8 @@ async function main(){
             exitPriceA = sellFillA.avgPrice;
             exitValA = exitSharesA * exitPriceA;
           } else {
-            exitPriceA = ba.mid || currentYesP;
-            exitValA = pos.shares * exitPriceA;
+            actions.push(`⚠️ 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} 相邻档替代止损触发，但盘口无法成交，继续持仓等待下一轮`);
+            continue;
           }
           const realPnlA = exitValA - pos.cost;
           pf.cash += exitValA;
@@ -746,9 +745,8 @@ async function main(){
         if(pos.dir==='BUY_YES') exitValN = exitSharesN * exitPriceN;
         else exitValN = exitSharesN * exitPriceN;
       } else {
-        exitPriceN = ba.mid || currentYesP;
-        if(pos.dir==='BUY_YES') exitValN = pos.shares * exitPriceN;
-        else exitValN = pos.shares * exitPriceN;
+        actions.push(`⚠️ 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} edge转负止损触发，但盘口无法成交，继续持仓等待下一轮`);
+        continue;
       }
       const realPnlN = exitValN - pos.cost;
       pf.cash += exitValN;
@@ -782,10 +780,8 @@ async function main(){
             if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
             else exitVal = exitShares * exitPrice;
           } else {
-            exitShares = Math.min(targetShares, pos.shares);
-            exitPrice = ba.mid || currentYesP;
-            if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
-            else exitVal = exitShares * exitPrice;
+            actions.push(`⚠️ 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} 结算日分层止盈触发，但盘口无法成交，继续持仓等待下一轮`);
+            continue;
           }
           const costPortion = pos.cost * (exitShares / pos.shares);
           const realPnl = exitVal - costPortion;
@@ -826,12 +822,8 @@ async function main(){
         else exitVal = exitShares * exitPrice;
         orderType = '市价';
       } else {
-        // Thin book — use limit order at mid
-        exitPrice = ba.mid || currentYesP;
-        exitShares = pos.shares;
-        if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
-        else exitVal = exitShares * exitPrice;
-        orderType = '限价(mid)';
+        actions.push(`⚠️ 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} edge反转卖出触发，但盘口深度不足（<50%），本轮不成交`);
+        continue;
       }
       const realPnl = exitVal - pos.cost;
       pf.cash += exitVal;
@@ -863,9 +855,8 @@ async function main(){
         if(pos.dir==='BUY_YES') exitVal0 = exitShares0 * exitPrice0;
         else exitVal0 = exitShares0 * exitPrice0;
       } else {
-        exitPrice0 = ba.mid || currentYesP;
-        if(pos.dir==='BUY_YES') exitVal0 = pos.shares * exitPrice0;
-        else exitVal0 = pos.shares * exitPrice0;
+        actions.push(`⚠️ 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} 模型翻转止损触发，但盘口无法成交，继续持仓等待下一轮`);
+        continue;
       }
       const realPnl0 = exitVal0 - pos.cost;
       if(realPnl0 > 0){
@@ -894,9 +885,8 @@ async function main(){
         if(pos.dir==='BUY_YES') exitVal = exitShares * exitPrice;
         else exitVal = exitShares * exitPrice;
       } else {
-        exitPrice = ba.mid || currentYesP;
-        if(pos.dir==='BUY_YES') exitVal = pos.shares * exitPrice;
-        else exitVal = pos.shares * exitPrice;
+        actions.push(`⚠️ 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} 60% edge止盈触发，但盘口无法成交，继续持仓等待下一轮`);
+        continue;
       }
       const realPnl=exitVal-pos.cost;
       if(realPnl > 0){
@@ -991,8 +981,8 @@ async function main(){
         exitPrice=sellFill.avgPrice || currentYesP;
         exitVal=exitShares*exitPrice;
       }else{
-        exitPrice=ba.bestBid||currentYesP||0;
-        exitVal=pos.shares*exitPrice;
+        actions.push(`⚠️ [YES实验] 流动性不足: ${pos.station} ${pos.date} ${pos.tempLabel} 触发TP但盘口无法成交，继续持仓等待下一轮`);
+        continue;
       }
       const realPnl=exitVal-pos.cost;
       yesPf.cash+=exitVal;

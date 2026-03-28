@@ -1,71 +1,5 @@
 [
   {
-    "city": "Wellington",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T11:05:08.422Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Seattle",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T11:05:08.422Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "London",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T11:05:08.422Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Seoul",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T11:05:08.422Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Shanghai",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T11:05:08.422Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Paris",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T11:05:08.422Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Chicago",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T11:05:08.422Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Dallas",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T11:05:08.422Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "NYC",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T11:05:08.422Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Miami",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T11:05:08.422Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Madrid",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-26T20:05:22.317Z",
-    "reason": "volume-top10"
-  },
-  {
     "city": "Madrid",
     "date": "2026-03-29",
     "firstSeen": "2026-03-27T11:05:25.058Z",
@@ -144,39 +78,9 @@
     "reason": "volume-top10"
   },
   {
-    "city": "Lucknow",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-27T23:05:26.083Z",
-    "reason": "signal-edge-28pct"
-  },
-  {
     "city": "Paris",
     "date": "2026-03-29",
     "firstSeen": "2026-03-28T03:05:18.943Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Atlanta",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-28T06:22:52.405Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Singapore",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-28T06:22:52.405Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Tokyo",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-28T06:22:52.405Z",
-    "reason": "volume-top10"
-  },
-  {
-    "city": "Beijing",
-    "date": "2026-03-28",
-    "firstSeen": "2026-03-28T06:22:52.405Z",
     "reason": "volume-top10"
   },
   {
@@ -204,9 +108,177 @@
     "reason": "signal-edge-22pct"
   },
   {
+    "city": "Singapore",
+    "date": "2026-03-29",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Miami",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Seattle",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Wellington",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Paris",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Tokyo",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Chicago",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "NYC",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Taipei",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Atlanta",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Dallas",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Shanghai",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T11:05:30.397Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Seoul",
+    "date": "2026-03-30",
+    "firstSeen": "2026-03-28T12:05:33.467Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Seoul",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Wellington",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Shanghai",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "London",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Madrid",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Atlanta",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Tokyo",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Singapore",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "NYC",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Beijing",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Miami",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Seattle",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Paris",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Chicago",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
     "city": "Taipei",
     "date": "2026-03-28",
-    "firstSeen": "2026-03-28T09:03:09.835Z",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Dallas",
+    "date": "2026-03-28",
+    "firstSeen": "2026-03-28T15:47:41.945Z",
     "reason": "volume-top10"
   }
 ]
