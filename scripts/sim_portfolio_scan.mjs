@@ -93,6 +93,18 @@ const CITY_SIGMA = {
   'Tel Aviv':  1.0,
   'Hong Kong': 1.2,
   'Seattle':   1.5,
+  // ─── 11 new cities (2026-03-28, 保守默认 sigma) ───
+  'Taipei':        1.5,
+  'Beijing':       2.0,
+  'Tokyo':         1.5,
+  'Buenos Aires':  1.5,
+  'Singapore':     1.0,
+  'Sao Paulo':     1.5,
+  'Los Angeles':   1.5,
+  'San Francisco': 1.5,
+  'Atlanta':       2.0,
+  'Houston':       2.5,
+  'Denver':        3.0,
 };
 
 function getSigmaForDate(targetDateStr, station, baseSigma){
@@ -104,6 +116,7 @@ function getSigmaForDate(targetDateStr, station, baseSigma){
 }
 
 const STATIONS = [
+  // ─── Original 17 cities ───
   { name: 'Shanghai', icao: 'ZSPD', geocode: '31.15,121.803', metarId: 'ZSPD', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'shanghai-daily-weather' },
   { name: 'Dallas', icao: 'KDFW', geocode: '32.899,-97.040', metarId: 'KDFW', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'dallas-daily-weather' },
   { name: 'London', icao: 'EGLL', geocode: '51.470,-0.454', metarId: 'EGLL', tz: 'Europe/London', utcOffset: 0, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'london-daily-weather' },
@@ -121,6 +134,18 @@ const STATIONS = [
   { name: 'Seattle', icao: 'KSEA', geocode: '47.450,-122.309', metarId: 'KSEA', tz: 'America/Los_Angeles', utcOffset: -7, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'seattle-daily-weather' },
   { name: 'Warsaw', icao: 'EPWA', geocode: '52.166,20.967', metarId: 'EPWA', tz: 'Europe/Warsaw', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'warsaw-daily-weather' },
   { name: 'Madrid', icao: 'LEMD', geocode: '40.472,-3.561', metarId: 'LEMD', tz: 'Europe/Madrid', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'madrid-daily-weather' },
+  // ─── 11 new cities (2026-03-28 expansion) ───
+  { name: 'Taipei', icao: 'RCTP', geocode: '25.078,121.233', metarId: 'RCTP', tz: 'Asia/Taipei', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'taipei-daily-weather' },
+  { name: 'Beijing', icao: 'ZBAA', geocode: '40.080,116.585', metarId: 'ZBAA', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'beijing-daily-weather' },
+  { name: 'Tokyo', icao: 'RJTT', geocode: '35.553,139.781', metarId: 'RJTT', tz: 'Asia/Tokyo', utcOffset: 9, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'tokyo-daily-weather' },
+  { name: 'Buenos Aires', icao: 'SAEZ', geocode: '-34.822,-58.535', metarId: 'SAEZ', tz: 'America/Argentina/Buenos_Aires', utcOffset: -3, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'buenos-aires-daily-weather' },
+  { name: 'Singapore', icao: 'WSSS', geocode: '1.350,103.994', metarId: 'WSSS', tz: 'Asia/Singapore', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'singapore-daily-weather' },
+  { name: 'Sao Paulo', icao: 'SBGR', geocode: '-23.435,-46.473', metarId: 'SBGR', tz: 'America/Sao_Paulo', utcOffset: -3, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'sao-paulo-daily-weather' },
+  { name: 'Los Angeles', icao: 'KLAX', geocode: '33.942,-118.408', metarId: 'KLAX', tz: 'America/Los_Angeles', utcOffset: -7, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'los-angeles-daily-weather' },
+  { name: 'San Francisco', icao: 'KSFO', geocode: '37.619,-122.375', metarId: 'KSFO', tz: 'America/Los_Angeles', utcOffset: -7, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'san-francisco-daily-weather' },
+  { name: 'Atlanta', icao: 'KATL', geocode: '33.640,-84.427', metarId: 'KATL', tz: 'America/New_York', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'atlanta-daily-weather' },
+  { name: 'Houston', icao: 'KIAH', geocode: '29.990,-95.336', metarId: 'KIAH', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'houston-daily-weather' },
+  { name: 'Denver', icao: 'KDEN', geocode: '39.856,-104.676', metarId: 'KDEN', tz: 'America/Denver', utcOffset: -6, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'denver-daily-weather' },
 ];
 
 // ─── Math ──────────────────────────────────────────────────
@@ -367,6 +392,17 @@ async function main(){
         const dist=buildDist(mu,sigma);
         currentDist=dist;
         modelP=dist[pos.k]||0;
+
+        // ─── V2.1 TAIL持有到结算：跳过所有止盈止损 ───
+        const isTailHold = pos.bucket === 'tail' && rules.tailHoldToSettlement;
+        if(isTailHold){
+          // Tail positions: NO stop-loss, NO take-profit, hold to settlement
+          // Only log current state for monitoring
+          const currentVal = pos.dir==='BUY_NO' ? pos.shares * currentNoP : pos.shares * currentYesP;
+          const floatingPnl = currentVal - pos.cost;
+          actions.push(`   📌 TAIL持有: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | NO=${(currentNoP*100).toFixed(1)}% | 浮动$${floatingPnl.toFixed(2)} | 持有到结算`);
+          continue; // skip ALL stop-loss / take-profit / sell logic
+        }
 
         // Check for forecast shift (stop-loss trigger)
         const forecastShift=Math.abs(fMax-(pos.forecastMaxAtEntry||fMax));
@@ -1136,8 +1172,8 @@ async function main(){
           // BUY_NO center 48.6% 胜率不达标，禁止
           continue;
         }
-        if(noP < 0.50){
-          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO ${bucketType}: NO=${(noP*100).toFixed(0)}% < 50%下限`);
+        if(noP < rules.minNoPrice){
+          actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} BUY_NO ${bucketType}: NO=${(noP*100).toFixed(0)}% < ${(rules.minNoPrice*100).toFixed(0)}%下限`);
           continue;
         }
 
