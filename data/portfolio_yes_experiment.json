@@ -1,79 +1,8 @@
 {
   "initialCapital": 100,
-  "cash": 91.28999999999999,
-  "totalPnl": 1.1399999999999997,
-  "positions": [
-    {
-      "slug": "highest-temperature-in-lucknow-on-march-29-2026-34corbelow",
-      "station": "Lucknow",
-      "date": "2026-03-29",
-      "dayName": "Sunday",
-      "tempLabel": "34°C or below",
-      "k": 34,
-      "dir": "BUY_YES",
-      "bucket": "center",
-      "entryPrice": 0.1912,
-      "shares": 25.64,
-      "cost": 4.9,
-      "entryTime": "2026-03-28T12:05:03.674Z",
-      "modelPAtEntry": 0.36,
-      "yesPAtEntry": 0.18,
-      "noPAtEntry": 0.82,
-      "edgeAtEntry": 0.18,
-      "forecastMaxAtEntry": 35,
-      "muAtEntry": 35,
-      "distFromMuAtEntry": 1,
-      "fills": [
-        {
-          "price": 0.19,
-          "shares": 22.64,
-          "cost": 4.3
-        },
-        {
-          "price": 0.2,
-          "shares": 3,
-          "cost": 0.6
-        }
-      ],
-      "entryEdgeAtEntry": 0.18,
-      "tpTargetYes": 0.2521239218624542
-    },
-    {
-      "slug": "highest-temperature-in-taipei-on-march-29-2026-22corbelow",
-      "station": "Taipei",
-      "date": "2026-03-29",
-      "dayName": "Sunday",
-      "tempLabel": "22°C or below",
-      "k": 22,
-      "dir": "BUY_YES",
-      "bucket": "center",
-      "entryPrice": 0.1596,
-      "shares": 31,
-      "cost": 4.95,
-      "entryTime": "2026-03-28T12:05:03.674Z",
-      "modelPAtEntry": 0.476,
-      "yesPAtEntry": 0.116,
-      "noPAtEntry": 0.884,
-      "edgeAtEntry": 0.36,
-      "forecastMaxAtEntry": 23,
-      "muAtEntry": 22.7,
-      "distFromMuAtEntry": 0.7,
-      "fills": [
-        {
-          "price": 0.14,
-          "shares": 10,
-          "cost": 1.4
-        },
-        {
-          "price": 0.169,
-          "shares": 21,
-          "cost": 3.55
-        }
-      ],
-      "entryEdgeAtEntry": 0.36,
-      "tpTargetYes": 0.259969532238228
-    }
-  ],
+  "cash": 106.81788399999999,
+  "totalPnl": 6.817883999999999,
+  "positions": [],
   "closedTrades": [
     {
       "slug": "highest-temperature-in-warsaw-on-march-29-2026-17corhigher",
@@ -113,12 +42,90 @@
       "exitTime": "2026-03-28T14:05:04.226Z",
       "pnl": 1.14,
       "reason": "yes_experiment_tp40"
+    },
+    {
+      "slug": "highest-temperature-in-taipei-on-march-29-2026-22corbelow",
+      "station": "Taipei",
+      "date": "2026-03-29",
+      "dayName": "Sunday",
+      "tempLabel": "22°C or below",
+      "k": 22,
+      "dir": "BUY_YES",
+      "bucket": "center",
+      "entryPrice": 0.1596,
+      "shares": 31,
+      "cost": 4.95,
+      "entryTime": "2026-03-28T12:05:03.674Z",
+      "modelPAtEntry": 0.476,
+      "yesPAtEntry": 0.116,
+      "noPAtEntry": 0.884,
+      "edgeAtEntry": 0.36,
+      "forecastMaxAtEntry": 23,
+      "muAtEntry": 22.7,
+      "distFromMuAtEntry": 0.7,
+      "fills": [
+        {
+          "price": 0.14,
+          "shares": 10,
+          "cost": 1.4
+        },
+        {
+          "price": 0.169,
+          "shares": 21,
+          "cost": 3.55
+        }
+      ],
+      "entryEdgeAtEntry": 0.36,
+      "tpTargetYes": 0.259969532238228,
+      "exitPrice": 0.2378,
+      "exitTime": "2026-03-28T23:05:02.648Z",
+      "pnl": 2.42,
+      "reason": "yes_experiment_tp40"
+    },
+    {
+      "slug": "highest-temperature-in-lucknow-on-march-29-2026-34corbelow",
+      "station": "Lucknow",
+      "date": "2026-03-29",
+      "dayName": "Sunday",
+      "tempLabel": "34°C or below",
+      "k": 34,
+      "dir": "BUY_YES",
+      "bucket": "center",
+      "entryPrice": 0.1912,
+      "shares": 25.64,
+      "cost": 4.9,
+      "entryTime": "2026-03-28T12:05:03.674Z",
+      "modelPAtEntry": 0.36,
+      "yesPAtEntry": 0.18,
+      "noPAtEntry": 0.82,
+      "edgeAtEntry": 0.18,
+      "forecastMaxAtEntry": 35,
+      "muAtEntry": 35,
+      "distFromMuAtEntry": 1,
+      "fills": [
+        {
+          "price": 0.19,
+          "shares": 22.64,
+          "cost": 4.3
+        },
+        {
+          "price": 0.2,
+          "shares": 3,
+          "cost": 0.6
+        }
+      ],
+      "entryEdgeAtEntry": 0.18,
+      "tpTargetYes": 0.2521239218624542,
+      "exitPrice": 0.3181,
+      "exitTime": "2026-03-29T03:05:02.919Z",
+      "pnl": 3.26,
+      "reason": "yes_experiment_tp40"
     }
   ],
   "rules": {
     "enabled": true,
     "strategy": "buy_yes_center_day1_experiment",
-    "maxSingleTrade": 5,
+    "maxSingleTrade": 10,
     "minEdge": 0.15,
     "yesPriceMin": 0.1,
     "yesPriceMax": 0.4,
@@ -134,7 +141,9 @@
     "dayDiff": 1
   },
   "stoppedToday": {
-    "highest-temperature-in-warsaw-on-march-29-2026-17corhigher": "2026-03-28T14:05:04.226Z"
+    "highest-temperature-in-warsaw-on-march-29-2026-17corhigher": "2026-03-28T14:05:04.226Z",
+    "highest-temperature-in-taipei-on-march-29-2026-22corbelow": "2026-03-28T23:05:02.648Z",
+    "highest-temperature-in-lucknow-on-march-29-2026-34corbelow": "2026-03-29T03:05:02.919Z"
   },
-  "updatedAt": "2026-03-28T15:48:09.080Z"
+  "updatedAt": "2026-03-29T03:47:32.052Z"
 }

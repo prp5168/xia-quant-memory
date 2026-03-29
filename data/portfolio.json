@@ -2292,7 +2292,7 @@
   "rules": {
     "version": "v2",
     "strategy": "buy_no_tail_near_hold_to_settlement",
-    "maxSingleTrade": 10,
+    "maxSingleTrade": 20,
     "minEdge": 0.15,
     "minNoPrice": 0.6,
     "allowedBuckets": [
