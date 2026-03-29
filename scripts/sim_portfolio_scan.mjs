@@ -1052,14 +1052,15 @@ async function main(){
 
   await saveWatchlist(watchlist);
 
-  const stationsToScan = STATIONS.filter(st => selectedStationNames.has(st.name));
+  // 30城全扫：不再按 volume top10 筛选，直接扫全部 STATIONS
+  const stationsToScan = STATIONS;
   for(const [date, sts] of Object.entries(topStationsByDate)){
     actions.push(`📈 ${date} 成交量前10城市: ${sts.map(s => s.name).join(', ')}`);
   }
   if(watchlistCitiesAdded.length){
     actions.push(`📋 Watchlist延续城市: ${watchlistCitiesAdded.join(', ')}`);
   }
-  actions.push(`🧭 去重后扫描城市(${stationsToScan.length}): ${stationsToScan.map(s => s.name).join(', ')}`);
+  actions.push(`🧭 全量扫描(${stationsToScan.length}城)`);
 
   for(const st of stationsToScan){
     let daily,hourly;
@@ -1105,11 +1106,12 @@ async function main(){
       const dayName=daily.dayOfWeek[i];
       const forecastMax=daily.calendarDayTemperatureMax[i];
       if(!date) continue;
+      // 30城全扫：不再跳过非top-volume城市，所有城市所有日期都扫
+      // (保留变量定义供 watchlist 逻辑使用)
       const topForDate = topStationsByDate[date] || [];
       const isHeldCity = heldStationNames.has(st.name);
       const isOnWatchlist = watchlist.some(w => w.city === st.name && w.date === date);
       const isInStationScanDates = (stationScanDates[st.name] || []).includes(date);
-      if(SCAN_MODE === 'full' && !isHeldCity && !isOnWatchlist && !topForDate.some(x => x.name === st.name) && !isInStationScanDates) continue;
 
       // Fish-body hard rule: today's markets are observe-only (never real buy)
       const localToday = getLocalDateStr(st.utcOffset);
