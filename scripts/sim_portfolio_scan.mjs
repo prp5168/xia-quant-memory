@@ -108,6 +108,7 @@ const CITY_SIGMA = {
   'Denver':        3.0,
   'Austin':        2.5,
   'Istanbul':      1.5,
+  'Chengdu':       2.0,
 };
 
 function getSigmaForDate(targetDateStr, station, baseSigma){
@@ -151,6 +152,7 @@ const STATIONS = [
   { name: 'Denver', icao: 'KDEN', geocode: '39.856,-104.676', metarId: 'KDEN', tz: 'America/Denver', utcOffset: -6, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'denver-daily-weather' },
   { name: 'Austin', icao: 'KAUS', geocode: '30.194,-97.670', metarId: 'KAUS', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'austin-daily-weather' },
   { name: 'Istanbul', icao: 'LTFM', geocode: '41.275,28.752', metarId: 'LTFM', tz: 'Europe/Istanbul', utcOffset: 3, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'istanbul-daily-weather' },
+  { name: 'Chengdu', icao: 'ZUUU', geocode: '30.578,103.947', metarId: 'ZUUU', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'chengdu-daily-weather' },
 ];
 
 // ─── Math ──────────────────────────────────────────────────
