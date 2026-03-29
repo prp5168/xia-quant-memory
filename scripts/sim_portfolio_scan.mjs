@@ -1344,19 +1344,63 @@ async function main(){
         try{const bk=await getBook(tokenIds[0]);ba=parseBook(bk);}catch{}
         try{if(tokenIds[1]){const bkNo=await getBook(tokenIds[1]);baNo=parseBook(bkNo);}}catch{}
 
-        // Position sizing: 主盘/实验盘各自读取规则
+        // Position sizing: 动态根据盘口深度+edge调整，上限为规则设定值
         const targetPf = isYesExperimentCandidate ? yesPf : pf;
         const budgetCap = isYesExperimentCandidate ? (yesRules.maxSingleTrade ?? 5) : (rules.maxSingleTrade ?? 10);
-        const budgetWant = Math.min(budgetCap, targetPf.cash);
-        if(budgetWant<2) continue;
+        const budgetCash = Math.min(budgetCap, targetPf.cash);
+        if(budgetCash<2) continue;
 
-        // Simulate actual fill against real orderbook
+        // Fetch orderbook for entry side
         const entryBook = dir==='BUY_YES' ? ba : baNo;
         const fillSide = 'ask';
+
+        // ─── 动态仓位: 基于盘口深度 + edge 确定最大可接受滑点 ───
+        // 核心思路: edge 越大 → 容忍越多滑点 → 允许吃更深
+        //          edge 小 → 只吃低滑点的量，不值得为凑满上限去硬推价格
+        let maxSlippage; // 最大可接受滑点(相对第一档价格)
+        if(absEdge >= 0.30) maxSlippage = 0.10;       // edge≥30%: 容忍10%绝对滑点
+        else if(absEdge >= 0.20) maxSlippage = 0.05;   // edge 20-30%: 容忍5%
+        else maxSlippage = 0.03;                        // edge 15-20%: 只容忍3%
+
+        // 算在可接受滑点范围内的总容量
+        let depthWithinSlippage = 0;
+        if(entryBook.asks && entryBook.asks.length > 0){
+          const basePrice = entryBook.asks[0].p;
+          for(const lvl of entryBook.asks){
+            if(Math.abs(lvl.p - basePrice) <= maxSlippage){
+              depthWithinSlippage += (lvl.s || 0) * (lvl.p || 0);
+            } else {
+              break; // asks 已排序，后面只会更贵
+            }
+          }
+        }
+        // 实际预算 = min(上限, 现金, 可接受滑点内的深度)
+        // 若可接受深度 > 上限 → 按上限（深度充足不用省）
+        // 若可接受深度 < 上限 → 按深度（不硬推价格）
+        const depthBudget = depthWithinSlippage > 0
+          ? Math.min(budgetCash, depthWithinSlippage)
+          : budgetCash; // 无法解析asks结构时fallback到上限
+        const budgetWant = Math.max(2, Math.round(depthBudget * 100) / 100);
+
+        // Simulate actual fill against real orderbook
         const fill = entryBook.simulateFill ? entryBook.simulateFill(fillSide, budgetWant) : null;
         if(!fill || !fill.filled || fill.shares<1) {
           actions.push(`   ⏭️ 跳过 ${st.name} ${date} ${title} ${dir}: 盘口无法成交(深度不足)`);
           continue;
+        }
+        // 4) 检查实际滑点：如果吃了多档且滑点>edge的一半，砍到只吃第一档
+        if(fill.fills && fill.fills.length > 1){
+          const bestPrice = fill.fills[0].price;
+          const worstPrice = fill.fills[fill.fills.length - 1].price;
+          const slippage = Math.abs(worstPrice - bestPrice);
+          if(slippage > absEdge * 0.5){
+            // 滑点太大，只吃第一档
+            const firstOnly = entryBook.simulateFill(fillSide, Math.min(firstLevelCapacity || 2, budgetCash));
+            if(firstOnly && firstOnly.filled && firstOnly.shares >= 1){
+              Object.assign(fill, firstOnly); // 替换为第一档结果
+              actions.push(`   📏 滑点${(slippage*100).toFixed(1)}% > edge一半${(absEdge*50).toFixed(1)}%, 缩减到第一档 $${firstOnly.cost.toFixed(2)}`);
+            }
+          }
         }
 
         // BUY_YES uses YES ask book; BUY_NO uses NO ask book directly from PM
@@ -1404,6 +1448,7 @@ async function main(){
           actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}% YES=${(yesP*100).toFixed(0)}%`);
           if(isYesExperimentCandidate) actions.push(`   🧪 规则: dayDiff=${localDayDiff} | YES区间${((yesRules.yesPriceMin ?? 0.1)*100).toFixed(0)}-${((yesRules.yesPriceMax ?? 0.4)*100).toFixed(0)}% | TP目标${(position.tpTargetYes*100).toFixed(1)}%`);
           actions.push(`   💵 实际成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
+          actions.push(`   📏 仓位: 上限$${budgetCap} | 滑点容忍${(maxSlippage*100).toFixed(0)}% | 深度内$${depthWithinSlippage>0?depthWithinSlippage.toFixed(2):'N/A'} → 预算$${budgetWant.toFixed(2)}`);
           if(fill.fills.length>1){
             actions.push(`   📖 逐档吃单: ${fill.fills.map(f=>`${f.shares}股@${(f.price*100).toFixed(1)}%=$${f.cost}`).join(' → ')}`);
           }
