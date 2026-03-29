@@ -1,6 +1,6 @@
 {
   "initialCapital": 600,
-  "cash": 229.34794,
+  "cash": 251.34794,
   "positions": [
     {
       "slug": "highest-temperature-in-seattle-on-march-28-2026-54-55f",
@@ -32,40 +32,6 @@
           "price": 0.66,
           "shares": 23,
           "cost": 15.18
-        }
-      ],
-      "negativeEdgeCount": 0
-    },
-    {
-      "slug": "highest-temperature-in-miami-on-march-28-2026-86-87f",
-      "station": "Miami",
-      "date": "2026-03-28",
-      "dayName": "Saturday",
-      "tempLabel": "86-87°F",
-      "k": 86,
-      "dir": "BUY_NO",
-      "bucket": "tail",
-      "entryPrice": 0.8823,
-      "shares": 22,
-      "cost": 19.41,
-      "entryTime": "2026-03-28T03:05:03.554Z",
-      "modelPAtEntry": 0,
-      "yesPAtEntry": 0.155,
-      "noPAtEntry": 0.845,
-      "edgeAtEntry": 0.155,
-      "forecastMaxAtEntry": 29,
-      "muAtEntry": 29,
-      "distFromMuAtEntry": 57,
-      "fills": [
-        {
-          "price": 0.86,
-          "shares": 15,
-          "cost": 12.9
-        },
-        {
-          "price": 0.93,
-          "shares": 7,
-          "cost": 6.51
         }
       ],
       "negativeEdgeCount": 0
@@ -2284,11 +2250,49 @@
       "pnl": 0.98,
       "reason": "stop_loss_metar_confirmed_14C",
       "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-miami-on-march-28-2026-86-87f",
+      "station": "Miami",
+      "date": "2026-03-28",
+      "dayName": "Saturday",
+      "tempLabel": "86-87°F",
+      "k": 86,
+      "dir": "BUY_NO",
+      "bucket": "tail",
+      "entryPrice": 0.8823,
+      "shares": 22,
+      "cost": 19.41,
+      "entryTime": "2026-03-28T03:05:03.554Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.155,
+      "noPAtEntry": 0.845,
+      "edgeAtEntry": 0.155,
+      "forecastMaxAtEntry": 29,
+      "muAtEntry": 29,
+      "distFromMuAtEntry": 57,
+      "fills": [
+        {
+          "price": 0.86,
+          "shares": 15,
+          "cost": 12.9
+        },
+        {
+          "price": 0.93,
+          "shares": 7,
+          "cost": 6.51
+        }
+      ],
+      "negativeEdgeCount": 0,
+      "exitPrice": 0,
+      "exitTime": "2026-03-29T07:05:05.205Z",
+      "pnl": 2.59,
+      "reason": "resolved"
     }
   ],
-  "totalPnl": -24.128885219024223,
+  "totalPnl": -21.538885219024223,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-29T03:47:32.051Z",
+  "updatedAt": "2026-03-29T09:23:30.210Z",
   "rules": {
     "version": "v2",
     "strategy": "buy_no_tail_near_hold_to_settlement",
@@ -2316,13 +2320,6 @@
     "tailHoldToSettlement": true
   },
   "stoppedToday": {
-    "highest-temperature-in-nyc-on-march-28-2026-44-45f": "2026-03-28T05:05:05.067Z",
-    "highest-temperature-in-chicago-on-march-28-2026-50-51f": "2026-03-28T05:05:05.067Z",
-    "highest-temperature-in-chicago-on-march-28-2026-48-49f": "2026-03-28T05:05:05.067Z",
-    "highest-temperature-in-nyc-on-march-28-2026-42-43f": "2026-03-28T05:05:05.067Z",
-    "highest-temperature-in-london-on-march-29-2026-10c": "2026-03-28T06:05:04.052Z",
-    "highest-temperature-in-dallas-on-march-28-2026-64-65f": "2026-03-28T06:05:04.052Z",
-    "highest-temperature-in-dallas-on-march-28-2026-62-63f": "2026-03-28T06:05:04.052Z",
     "highest-temperature-in-wellington-on-march-29-2026-20c": "2026-03-28T12:05:03.674Z",
     "highest-temperature-in-tokyo-on-march-29-2026-21c": "2026-03-28T17:05:02.698Z",
     "highest-temperature-in-paris-on-march-29-2026-11c": "2026-03-29T01:05:03.913Z",
