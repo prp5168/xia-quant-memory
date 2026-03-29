@@ -73,43 +73,86 @@ function getLocalDayDiff(targetDateStr, station){
   return Math.round((b - a) / 86400000);
 }
 
-// 每城市预报误差σ（29天回测：Open-Meteo历史预报 vs TWC实测，2026-02-19~03-19）
-// 提前1天σ为回测值；提前2天σ = 1天值×1.3（估算）；当天σ = 1天值×0.6（已有部分实测修正）
-const CITY_SIGMA = {
-  'Shanghai':  1.2,
-  'Seoul':     1.7,
-  'NYC':       2.3,
-  'London':    0.6,
-  'Chicago':   3.1,
-  'Dallas':    2.7,
-  'Miami':     1.0,
-  'Toronto':   1.2,
-  'Paris':     0.7,
-  'Warsaw':    1.1,
-  'Madrid':    0.9,
-  'Wellington':1.5,
-  'Lucknow':   0.7,
-  // 未回测城市用保守默认值
-  'Milan':     1.0,
-  'Tel Aviv':  1.0,
-  'Hong Kong': 1.2,
-  'Seattle':   1.5,
-  // ─── 11 new cities (2026-03-28, 保守默认 sigma) ───
-  'Taipei':        1.5,
-  'Beijing':       2.0,
-  'Tokyo':         1.5,
-  'Buenos Aires':  1.5,
-  'Singapore':     1.0,
-  'Sao Paulo':     1.5,
-  'Los Angeles':   1.5,
-  'San Francisco': 1.5,
-  'Atlanta':       2.0,
-  'Houston':       2.5,
-  'Denver':        3.0,
-  'Austin':        2.5,
-  'Istanbul':      1.5,
-  'Chengdu':       2.0,
-};
+// ─── 城市元数据：从 data/city_meta.json 动态加载 ────────────
+// city_meta.json 格式: { "pm-slug": { name, icao, geocode, metarId, tz, utcOffset, sigma, peakStartLocal, peakEndLocal } }
+// PM slug = 城市名小写+空格转横杠 (e.g. "hong-kong", "sao-paulo", "nyc")
+const CITY_META_PATH = 'data/city_meta.json';
+
+let _cityMeta = null;
+async function loadCityMeta(){
+  if(_cityMeta) return _cityMeta;
+  try{
+    const raw = await readFile(CITY_META_PATH, 'utf8');
+    _cityMeta = JSON.parse(raw);
+  }catch{
+    _cityMeta = {};
+  }
+  return _cityMeta;
+}
+async function saveCityMeta(meta){
+  _cityMeta = meta;
+  await writeFile(CITY_META_PATH, JSON.stringify(meta, null, 2));
+}
+
+// 从 city_meta 构建 STATIONS 数组和 CITY_SIGMA map
+function buildStationsFromMeta(meta){
+  const stations = [];
+  const citySigma = {};
+  for(const [slug, m] of Object.entries(meta)){
+    if(!m.icao || !m.geocode) continue; // 跳过不完整的城市
+    stations.push({
+      name: m.name,
+      icao: m.icao,
+      geocode: m.geocode,
+      metarId: m.metarId || m.icao,
+      tz: m.tz || 'UTC',
+      utcOffset: m.utcOffset ?? 0,
+      peakStartLocal: m.peakStartLocal ?? 6,
+      peakEndLocal: m.peakEndLocal ?? 14,
+      seriesSlug: slug + '-daily-weather',
+      pmSlug: slug,
+    });
+    citySigma[m.name] = m.sigma ?? 1.5;
+  }
+  return { stations, citySigma };
+}
+
+// ─── PM 动态城市发现 ──────────────────────────────────────
+// 从 Gamma API 搜索所有 "highest-temperature-in-*" 活跃事件
+// 提取城市 slug，对比 city_meta，发现新城市时输出 warning
+async function discoverPMCities(actions){
+  const meta = await loadCityMeta();
+  const discoveredSlugs = new Set();
+  const newCities = [];
+  try{
+    // Search PM events with "highest temperature" tag
+    const url = 'https://gamma-api.polymarket.com/events?tag=weather&closed=false&limit=200';
+    const events = await fetchJSON(url);
+    if(!Array.isArray(events)) return { meta, newCities };
+    for(const ev of events){
+      const title = (ev.title || '').toLowerCase();
+      const match = title.match(/highest temperature in (.+?) on /);
+      if(!match) continue;
+      const cityRaw = match[1].trim();
+      const slug = cityRaw.replace(/\s+/g, '-');
+      discoveredSlugs.add(slug);
+      if(!meta[slug]){
+        newCities.push({ slug, cityRaw, eventId: ev.id, title: ev.title });
+      }
+    }
+  }catch(e){
+    actions.push(`⚠️ PM 动态城市发现失败: ${e.message}（回退到已知城市列表）`);
+  }
+  if(newCities.length > 0){
+    actions.push(`🆕 PM 发现 ${newCities.length} 个未知新城市: ${newCities.map(c=>c.cityRaw).join(', ')}`);
+    actions.push(`   ⚠️ 需手动添加 ICAO/geocode/tz 到 data/city_meta.json 后才能扫描`);
+  }
+  return { meta, newCities, discoveredSlugs };
+}
+
+// 延迟初始化的全局变量（main() 中赋值）
+let STATIONS = [];
+let CITY_SIGMA = {};
 
 function getSigmaForDate(targetDateStr, station, baseSigma){
   const dayDiff = getLocalDayDiff(targetDateStr, station);
@@ -118,42 +161,6 @@ function getSigmaForDate(targetDateStr, station, baseSigma){
   if(dayDiff === 1) return citySigma * 2.0;  // 明天（2x基线，数据验证 forecast drift 远超 1x sigma）
   return citySigma * 2.6;                     // 后天（2x基线再放大）
 }
-
-const STATIONS = [
-  // ─── Original 17 cities ───
-  { name: 'Shanghai', icao: 'ZSPD', geocode: '31.15,121.803', metarId: 'ZSPD', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'shanghai-daily-weather' },
-  { name: 'Dallas', icao: 'KDFW', geocode: '32.899,-97.040', metarId: 'KDFW', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'dallas-daily-weather' },
-  { name: 'London', icao: 'EGLL', geocode: '51.470,-0.454', metarId: 'EGLL', tz: 'Europe/London', utcOffset: 0, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'london-daily-weather' },
-  { name: 'Seoul', icao: 'RKSI', geocode: '37.469,126.451', metarId: 'RKSI', tz: 'Asia/Seoul', utcOffset: 9, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'seoul-daily-weather' },
-  { name: 'Wellington', icao: 'NZWN', geocode: '-41.327,174.805', metarId: 'NZWN', tz: 'Pacific/Auckland', utcOffset: 13, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'wellington-daily-weather' },
-  { name: 'Milan', icao: 'LIMC', geocode: '45.630,8.723', metarId: 'LIMC', tz: 'Europe/Rome', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'milan-daily-weather' },
-  { name: 'Tel Aviv', icao: 'LLBG', geocode: '32.011,34.886', metarId: 'LLBG', tz: 'Asia/Jerusalem', utcOffset: 2, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'tel-aviv-daily-weather' },
-  { name: 'Hong Kong', icao: 'VHHH', geocode: '22.308,113.918', metarId: 'VHHH', tz: 'Asia/Hong_Kong', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'hong-kong-daily-weather' },
-  { name: 'Chicago', icao: 'KORD', geocode: '41.974,-87.907', metarId: 'KORD', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'chicago-daily-weather' },
-  { name: 'NYC', icao: 'KJFK', geocode: '40.641,-73.778', metarId: 'KJFK', tz: 'America/New_York', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'nyc-daily-weather' },
-  { name: 'Lucknow', icao: 'VILK', geocode: '26.761,80.889', metarId: 'VILK', tz: 'Asia/Kolkata', utcOffset: 5.5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'lucknow-daily-weather' },
-  { name: 'Paris', icao: 'LFPG', geocode: '49.009,2.547', metarId: 'LFPG', tz: 'Europe/Paris', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'paris-daily-weather' },
-  { name: 'Miami', icao: 'KMIA', geocode: '25.795,-80.287', metarId: 'KMIA', tz: 'America/New_York', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'miami-daily-weather' },
-  { name: 'Toronto', icao: 'CYYZ', geocode: '43.677,-79.624', metarId: 'CYYZ', tz: 'America/Toronto', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'toronto-daily-weather' },
-  { name: 'Seattle', icao: 'KSEA', geocode: '47.450,-122.309', metarId: 'KSEA', tz: 'America/Los_Angeles', utcOffset: -7, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'seattle-daily-weather' },
-  { name: 'Warsaw', icao: 'EPWA', geocode: '52.166,20.967', metarId: 'EPWA', tz: 'Europe/Warsaw', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'warsaw-daily-weather' },
-  { name: 'Madrid', icao: 'LEMD', geocode: '40.472,-3.561', metarId: 'LEMD', tz: 'Europe/Madrid', utcOffset: 1, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'madrid-daily-weather' },
-  // ─── 11 new cities (2026-03-28 expansion) ───
-  { name: 'Taipei', icao: 'RCTP', geocode: '25.078,121.233', metarId: 'RCTP', tz: 'Asia/Taipei', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'taipei-daily-weather' },
-  { name: 'Beijing', icao: 'ZBAA', geocode: '40.080,116.585', metarId: 'ZBAA', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'beijing-daily-weather' },
-  { name: 'Tokyo', icao: 'RJTT', geocode: '35.553,139.781', metarId: 'RJTT', tz: 'Asia/Tokyo', utcOffset: 9, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'tokyo-daily-weather' },
-  { name: 'Buenos Aires', icao: 'SAEZ', geocode: '-34.822,-58.535', metarId: 'SAEZ', tz: 'America/Argentina/Buenos_Aires', utcOffset: -3, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'buenos-aires-daily-weather' },
-  { name: 'Singapore', icao: 'WSSS', geocode: '1.350,103.994', metarId: 'WSSS', tz: 'Asia/Singapore', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'singapore-daily-weather' },
-  { name: 'Sao Paulo', icao: 'SBGR', geocode: '-23.435,-46.473', metarId: 'SBGR', tz: 'America/Sao_Paulo', utcOffset: -3, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'sao-paulo-daily-weather' },
-  { name: 'Los Angeles', icao: 'KLAX', geocode: '33.942,-118.408', metarId: 'KLAX', tz: 'America/Los_Angeles', utcOffset: -7, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'los-angeles-daily-weather' },
-  { name: 'San Francisco', icao: 'KSFO', geocode: '37.619,-122.375', metarId: 'KSFO', tz: 'America/Los_Angeles', utcOffset: -7, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'san-francisco-daily-weather' },
-  { name: 'Atlanta', icao: 'KATL', geocode: '33.640,-84.427', metarId: 'KATL', tz: 'America/New_York', utcOffset: -4, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'atlanta-daily-weather' },
-  { name: 'Houston', icao: 'KIAH', geocode: '29.990,-95.336', metarId: 'KIAH', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'houston-daily-weather' },
-  { name: 'Denver', icao: 'KDEN', geocode: '39.856,-104.676', metarId: 'KDEN', tz: 'America/Denver', utcOffset: -6, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'denver-daily-weather' },
-  { name: 'Austin', icao: 'KAUS', geocode: '30.194,-97.670', metarId: 'KAUS', tz: 'America/Chicago', utcOffset: -5, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'austin-daily-weather' },
-  { name: 'Istanbul', icao: 'LTFM', geocode: '41.275,28.752', metarId: 'LTFM', tz: 'Europe/Istanbul', utcOffset: 3, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'istanbul-daily-weather' },
-  { name: 'Chengdu', icao: 'ZUUU', geocode: '30.578,103.947', metarId: 'ZUUU', tz: 'Asia/Shanghai', utcOffset: 8, peakStartLocal: 6, peakEndLocal: 14, seriesSlug: 'chengdu-daily-weather' },
-];
 
 // ─── Math ──────────────────────────────────────────────────
 function normCdf(x){const s=x<0?-1:1;x=Math.abs(x)/Math.SQRT2;const t=1/(1+0.3275911*x);const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429;return 0.5*(1+s*(1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x)));}
@@ -242,7 +249,9 @@ function parseBook(book){
 function dateSlug(dateStr,city){
   const d=new Date(dateStr+'T00:00:00Z');
   const months=['january','february','march','april','may','june','july','august','september','october','november','december'];
-  return`highest-temperature-in-${city.toLowerCase()}-on-${months[d.getUTCMonth()]}-${d.getUTCDate()}-${d.getUTCFullYear()}`;
+  // PM slug 用横杠连接，不用空格（e.g. "hong-kong", "tel-aviv", "sao-paulo"）
+  const citySlug = city.toLowerCase().replace(/\s+/g, '-');
+  return`highest-temperature-in-${citySlug}-on-${months[d.getUTCMonth()]}-${d.getUTCDate()}-${d.getUTCFullYear()}`;
 }
 
 async function getTopStationsByEventVolume(targetDate, heldStationNames = new Set(), topN = 10){
@@ -341,11 +350,19 @@ async function savePortfolio(path, pf){
 // ─── Main ──────────────────────────────────────────────────
 async function main(){
   const now=new Date();
+  const actions=[]; // will be output as notifications
+
+  // ─── 动态城市发现：从 city_meta.json + PM API 构建扫描列表 ───
+  const { meta: cityMeta, newCities: pmNewCities } = await discoverPMCities(actions);
+  const built = buildStationsFromMeta(cityMeta);
+  STATIONS = built.stations;
+  CITY_SIGMA = built.citySigma;
+  actions.push(`🌍 城市加载: ${STATIONS.length} 个已配置${pmNewCities.length ? ` + ${pmNewCities.length} 个PM新发现待配置` : ''}`);
+
   const pf=JSON.parse(await readFile(PORTFOLIO_PATH,'utf8'));
   const yesPf=await loadYesExperimentPortfolio();
   const rules=pf.rules;
   const yesRules=yesPf.rules||{};
-  const actions=[]; // will be output as notifications
   const observeSnapshots=[]; // 概率路径观察记录
   const forecastLogs=[]; // TWC预报记录（用于积累预报误差数据）
 
@@ -1504,7 +1521,7 @@ async function main(){
   posVal = Math.round(posVal * 100) / 100;
   const { cash: summaryCash, realizedPnl } = getSummaryAccounting(pf);
 
-  const actionKeywords = ['🛒 买入', '🚨 止损', '💰 卖出', '🎯 止盈', '⏰ 分层止盈', '🏁 结算', '📥 补仓', '[YES实验]'];
+  const actionKeywords = ['🛒 买入', '🚨 止损', '💰 卖出', '🎯 止盈', '⏰ 分层止盈', '🏁 结算', '📥 补仓', '[YES实验]', '🌍 城市', '🆕 PM'];
   const compactActionLines = actions.filter(line => actionKeywords.some(k => line.includes(k)) || line.includes('💡 逻辑:') || line.includes('🧪 规则:'));
   const totalAssets = summaryCash + posVal;
   const totalPnl = totalAssets - Number(pf.initialCapital || 0);

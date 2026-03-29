@@ -3,40 +3,6 @@
   "cash": 251.34794,
   "positions": [
     {
-      "slug": "highest-temperature-in-seattle-on-march-28-2026-54-55f",
-      "station": "Seattle",
-      "date": "2026-03-28",
-      "dayName": "Saturday",
-      "tempLabel": "54-55°F",
-      "k": 54,
-      "dir": "BUY_NO",
-      "bucket": "tail",
-      "entryPrice": 0.6507,
-      "shares": 30,
-      "cost": 19.52,
-      "entryTime": "2026-03-27T11:05:03.438Z",
-      "modelPAtEntry": 0,
-      "yesPAtEntry": 0.355,
-      "noPAtEntry": 0.645,
-      "edgeAtEntry": 0.355,
-      "forecastMaxAtEntry": 13,
-      "muAtEntry": 12.7,
-      "distFromMuAtEntry": 41.3,
-      "fills": [
-        {
-          "price": 0.62,
-          "shares": 7,
-          "cost": 4.34
-        },
-        {
-          "price": 0.66,
-          "shares": 23,
-          "cost": 15.18
-        }
-      ],
-      "negativeEdgeCount": 0
-    },
-    {
       "slug": "highest-temperature-in-miami-on-march-29-2026-76-77f",
       "station": "Miami",
       "date": "2026-03-29",
@@ -2288,11 +2254,49 @@
       "exitTime": "2026-03-29T07:05:05.205Z",
       "pnl": 2.59,
       "reason": "resolved"
+    },
+    {
+      "slug": "highest-temperature-in-seattle-on-march-28-2026-54-55f",
+      "station": "Seattle",
+      "date": "2026-03-28",
+      "dayName": "Saturday",
+      "tempLabel": "54-55°F",
+      "k": 54,
+      "dir": "BUY_NO",
+      "bucket": "tail",
+      "entryPrice": 0.6507,
+      "shares": 30,
+      "cost": 19.52,
+      "entryTime": "2026-03-27T11:05:03.438Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.355,
+      "noPAtEntry": 0.645,
+      "edgeAtEntry": 0.355,
+      "forecastMaxAtEntry": 13,
+      "muAtEntry": 12.7,
+      "distFromMuAtEntry": 41.3,
+      "fills": [
+        {
+          "price": 0.62,
+          "shares": 7,
+          "cost": 4.34
+        },
+        {
+          "price": 0.66,
+          "shares": 23,
+          "cost": 15.18
+        }
+      ],
+      "negativeEdgeCount": 0,
+      "exitPrice": 1,
+      "exitTime": "2026-03-29T10:20:27.610Z",
+      "pnl": -19.52,
+      "reason": "resolved"
     }
   ],
-  "totalPnl": -21.538885219024223,
+  "totalPnl": -41.05888521902422,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-29T09:23:30.210Z",
+  "updatedAt": "2026-03-29T10:23:10.005Z",
   "rules": {
     "version": "v2",
     "strategy": "buy_no_tail_near_hold_to_settlement",

@@ -208,5 +208,35 @@
     "date": "2026-03-29",
     "firstSeen": "2026-03-29T09:21:50.536Z",
     "reason": "signal-edge-22pct"
+  },
+  {
+    "city": "Ankara",
+    "date": "2026-03-29",
+    "firstSeen": "2026-03-29T10:20:44.789Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Hong Kong",
+    "date": "2026-03-29",
+    "firstSeen": "2026-03-29T10:20:44.789Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Shenzhen",
+    "date": "2026-03-29",
+    "firstSeen": "2026-03-29T10:20:44.789Z",
+    "reason": "volume-top10"
+  },
+  {
+    "city": "Buenos Aires",
+    "date": "2026-03-29",
+    "firstSeen": "2026-03-29T10:20:55.026Z",
+    "reason": "signal-edge-19pct"
+  },
+  {
+    "city": "Los Angeles",
+    "date": "2026-03-29",
+    "firstSeen": "2026-03-29T10:20:58.565Z",
+    "reason": "signal-edge-23pct"
   }
 ]
