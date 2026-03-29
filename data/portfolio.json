@@ -2296,7 +2296,7 @@
   ],
   "totalPnl": -41.05888521902422,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-29T10:23:10.005Z",
+  "updatedAt": "2026-03-29T15:05:51.878Z",
   "rules": {
     "version": "v2",
     "strategy": "buy_no_tail_near_hold_to_settlement",
@@ -2324,7 +2324,6 @@
     "tailHoldToSettlement": true
   },
   "stoppedToday": {
-    "highest-temperature-in-wellington-on-march-29-2026-20c": "2026-03-28T12:05:03.674Z",
     "highest-temperature-in-tokyo-on-march-29-2026-21c": "2026-03-28T17:05:02.698Z",
     "highest-temperature-in-paris-on-march-29-2026-11c": "2026-03-29T01:05:03.913Z",
     "highest-temperature-in-seoul-on-march-29-2026-14c": "2026-03-29T02:05:02.943Z"
