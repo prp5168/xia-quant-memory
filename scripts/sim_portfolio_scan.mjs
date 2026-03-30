@@ -100,6 +100,8 @@ function buildStationsFromMeta(meta){
   const citySigma = {};
   for(const [slug, m] of Object.entries(meta)){
     if(!m.icao || !m.geocode) continue; // 跳过不完整的城市
+    // PM 美国城市用°F, 非美国用°C; 美国 ICAO 以 K 开头
+    const usesF = m.icao.startsWith('K');
     stations.push({
       name: m.name,
       icao: m.icao,
@@ -111,6 +113,7 @@ function buildStationsFromMeta(meta){
       peakEndLocal: m.peakEndLocal ?? 14,
       seriesSlug: slug + '-daily-weather',
       pmSlug: slug,
+      usesF,
     });
     citySigma[m.name] = m.sigma ?? 1.5;
   }
@@ -162,10 +165,40 @@ function getSigmaForDate(targetDateStr, station, baseSigma){
   return citySigma * 2.6;                     // 后天（2x基线再放大）
 }
 
+// ─── Unit conversion ───────────────────────────────────────
+function cToF(c){ return c * 9/5 + 32; }
+function fToC(f){ return (f - 32) * 5/9; }
+
 // ─── Math ──────────────────────────────────────────────────
 function normCdf(x){const s=x<0?-1:1;x=Math.abs(x)/Math.SQRT2;const t=1/(1+0.3275911*x);const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429;return 0.5*(1+s*(1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x)));}
-function pBin(mu,sig,k){return Math.max(0,normCdf((k+0.5-mu)/sig)-normCdf((k-0.5-mu)/sig));}
-function buildDist(mu,sigma){const p={};let t=0;for(let k=Math.floor(mu-5);k<=Math.ceil(mu+5);k++){const v=pBin(mu,sigma,k);if(v>0.001){p[k]=v;t+=v;}}for(const k of Object.keys(p))p[k]/=t;return p;}
+
+// pBin: probability mass for a bin.  binW = bin width (1 for °C, 2 for °F)
+function pBin(mu,sig,k,binW=1){return Math.max(0,normCdf((k+binW/2-mu)/sig)-normCdf((k-binW/2-mu)/sig));}
+
+// buildDist: generate probability distribution over integer k values.
+// usesF=true → mu/sigma in °F, PM bins are every 2°F; range ±12°F from mu
+// usesF=false → mu/sigma in °C, PM bins are every 1°C; range ±5°C from mu
+function buildDist(mu, sigma, usesF=false){
+  const p={};
+  let t=0;
+  if(usesF){
+    // °F: PM bins at even integers (52,54,56...), each covers 2°F
+    const lo = Math.floor((mu-12)/2)*2;  // round down to even
+    const hi = Math.ceil((mu+12)/2)*2;   // round up to even
+    for(let k=lo; k<=hi; k+=2){
+      const v=pBin(mu,sigma,k,2);
+      if(v>0.0005){p[k]=v;t+=v;}
+    }
+  } else {
+    // °C: bins at each integer, each covers 1°C
+    for(let k=Math.floor(mu-5);k<=Math.ceil(mu+5);k++){
+      const v=pBin(mu,sigma,k,1);
+      if(v>0.001){p[k]=v;t+=v;}
+    }
+  }
+  for(const k of Object.keys(p)) p[k]/=t;
+  return p;
+}
 
 // ─── API helpers ───────────────────────────────────────────
 async function fetchJSON(url){const r=await fetch(url,{headers:{'User-Agent':'openclaw-weather-arb/0.1'}});if(!r.ok)throw new Error(`${r.status} ${url.slice(0,80)}`);return r.json();}
@@ -449,14 +482,17 @@ async function main(){
           if(hourly.validTimeLocal[h]?.startsWith(pos.date)) hTemps.push(hourly.temperature[h]);
         }
         const hMax=hTemps.length?Math.max(...hTemps):fMax;
-        let mu=fMax*0.7+hMax*0.3;
+        let muC=fMax*0.7+hMax*0.3;
         const dp=daily.daypart?.[0]||{};
         const dpi=idx*2;
-        if((dp.qpf?.[dpi]||0)>5&&(dp.cloudCover?.[dpi]||0)>80) mu-=0.3;
-        if((dp.windSpeed?.[dpi]||0)>30) mu-=0.2;
-        if((dp.relativeHumidity?.[dpi]||0)<40&&(dp.cloudCover?.[dpi]||0)<30) mu+=0.3;
-        const sigma = getSigmaForDate(pos.date, st, rules.sigma);
-        const dist=buildDist(mu,sigma);
+        if((dp.qpf?.[dpi]||0)>5&&(dp.cloudCover?.[dpi]||0)>80) muC-=0.3;
+        if((dp.windSpeed?.[dpi]||0)>30) muC-=0.2;
+        if((dp.relativeHumidity?.[dpi]||0)<40&&(dp.cloudCover?.[dpi]||0)<30) muC+=0.3;
+        const sigmaC = getSigmaForDate(pos.date, st, rules.sigma);
+        // °F城市: 转换 mu/sigma 到°F后建分布, 使bin匹配PM盘口
+        const mu = st.usesF ? cToF(muC) : muC;
+        const sigma = st.usesF ? sigmaC * 1.8 : sigmaC;
+        const dist=buildDist(mu, sigma, st.usesF);
         currentDist=dist;
         modelP=dist[pos.k]||0;
 
@@ -1143,18 +1179,21 @@ async function main(){
         if(hourly.validTimeLocal[h]?.startsWith(date)) hTemps.push(hourly.temperature[h]);
       }
       const hourlyMax=hTemps.length?Math.max(...hTemps):forecastMax;
-      let mu=forecastMax*0.7+hourlyMax*0.3;
+      let muC=forecastMax*0.7+hourlyMax*0.3;
       const dpIdx=i*2;
       const precip=daypart.qpf?.[dpIdx]||0;
       const cloud=daypart.cloudCover?.[dpIdx]||0;
       const wind=daypart.windSpeed?.[dpIdx]||0;
       const humid=daypart.relativeHumidity?.[dpIdx]||0;
-      if(precip>5&&cloud>80) mu-=0.3;
-      if(wind>30) mu-=0.2;
-      if(humid<40&&cloud<30) mu+=0.3;
+      if(precip>5&&cloud>80) muC-=0.3;
+      if(wind>30) muC-=0.2;
+      if(humid<40&&cloud<30) muC+=0.3;
 
-      const sigma = getSigmaForDate(date, st, rules.sigma);
-      const dist=buildDist(mu,sigma);
+      const sigmaC = getSigmaForDate(date, st, rules.sigma);
+      // °F城市: 转换 mu/sigma 到°F后建分布, 使 bin 匹配 PM 盘口
+      const mu = st.usesF ? cToF(muC) : muC;
+      const sigma = st.usesF ? sigmaC * 1.8 : sigmaC;
+      const dist=buildDist(mu, sigma, st.usesF);
 
       // 统一记录窗口：当地当天16:00后，observe/forecast 两边都停止写入
       if(!isPastPeak){
@@ -1165,8 +1204,10 @@ async function main(){
           date,
           forecastMax,
           hourlyMax,
+          muC: Math.round(muC*10)/10,
           mu: Math.round(mu*10)/10,
           sigma,
+          usesF: st.usesF || false,
           citySigmaBase: CITY_SIGMA[st.name] || null,
           dayDiff: getLocalDayDiff(date, st),
           precip, cloud, wind, humid,
@@ -1194,8 +1235,15 @@ async function main(){
               const modelProb = dist[k] || 0;
               let marketYes = null;
               try{ const px=JSON.parse(em.outcomePrices||'[]'); marketYes=Number(px[0]||0); }catch{}
+              // dist 和 bucket 现在用统一单位（mu 已转换到与 k 相同单位）
               const distFromMu = Math.round(Math.abs(k - mu)*10)/10;
-              const bucket = distFromMu > 2 ? 'tail' : (distFromMu > 1 ? 'near' : 'center');
+              // °F城市: 2°F一档, center≤4, near≤8, tail>8
+              // °C城市: 1°C一档, center≤2, near≤4(原1→2), tail>4(原2→4)
+              // 但保持与旧°C逻辑兼容: center≤2, near≤4原为>1≤2, tail>2
+              // 修正: °F阈值 = °C阈值 × 1.8
+              const cThresh = st.usesF ? 3.6 : 2;   // tail 阈值
+              const nThresh = st.usesF ? 1.8 : 1;   // near 阈值
+              const bucket = distFromMu > cThresh ? 'tail' : (distFromMu > nThresh ? 'near' : 'center');
               bins[k] = {
                 model: Math.round(modelProb*1000)/1000,
                 yesP: marketYes!=null ? Math.round(marketYes*1000)/1000 : null,
@@ -1211,8 +1259,10 @@ async function main(){
             city: st.name,
             date,
             forecastMax,
+            muC: Math.round(muC*10)/10,
             mu: Math.round(mu*10)/10,
             sigma,
+            usesF: st.usesF || false,
             dayDiff: getLocalDayDiff(date, st),
             isToday: isTodayMarket,
             localHour: localHourNow,
@@ -1268,8 +1318,11 @@ async function main(){
         if(absEdge<rules.minEdge){ citySkippedEdge++; continue; }
 
         // ─── 主盘 + BUY_YES实验盘 建仓规则 ───
+        // mu 已经是和 k 同单位（°F城市两者都是°F，°C城市两者都是°C）
         const distFromMu = Math.abs(k - mu);
-        const bucketType = distFromMu > 2 ? 'tail' : (distFromMu > 1 ? 'near' : 'center');
+        const cThreshBuild = st.usesF ? 3.6 : 2;
+        const nThreshBuild = st.usesF ? 1.8 : 1;
+        const bucketType = distFromMu > cThreshBuild ? 'tail' : (distFromMu > nThreshBuild ? 'near' : 'center');
         const localDayDiff = getLocalDayDiff(date, st);
         const isYesExperimentCandidate = yesRules.enabled
           && dir === 'BUY_YES'
@@ -1440,7 +1493,9 @@ async function main(){
           noPAtEntry:noP,
           edgeAtEntry:Math.round(Math.abs(edge)*1000)/1000,
           forecastMaxAtEntry:forecastMax,
+          muCAtEntry:Math.round(muC*10)/10,
           muAtEntry:Math.round(mu*10)/10,
+          usesF: st.usesF || false,
           distFromMuAtEntry:Math.round(distFromMu*10)/10,
           fills:fill.fills, // detailed fill record
         };
