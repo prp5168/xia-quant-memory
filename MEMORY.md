@@ -336,6 +336,37 @@ V2 运行 30 小时后，37 笔已平仓数据暴露了核心问题：
 2. 累计 PnL < -$80
 3. 周胜率 < 65%（≥10 笔后生效）
 
+### 2026-03-30 修复：°C/°F 单位混合 BUG（严重）
+
+**BUG 描述：**
+- PM 美国城市盘口用 °F（如 k=54 表示 54-55°F），非美国城市用 °C
+- TWC API 返回 °C（units=m），所以 mu/sigma 始终是 °C
+- 旧代码直接 `|k - mu|` 算距离，没有单位转换
+- 导致两个严重问题：
+  1. **桶位全错**：所有美国城市 dist 虚高 30-50 → 全标为 tail
+  2. **模型概率全是 0**：buildDist 生成 °C bin（8-18），匹配不到 °F bin（52-68）→ modelP=0 → edge 全是虚假信号
+
+**影响范围：**
+- 65 笔 °F 城市交易中 34 笔 tail→center（最危险），23 笔 tail→near，只有 8 笔桶位正确（12%）
+- 31 笔按修复后逻辑不该建仓（center 被错标为 tail），已实现 PnL -$38.26
+- 受影响城市：Miami, NYC, Chicago, Atlanta, Dallas, Seattle, LA, SF
+- 典型案例：Seattle 03-28 k=54°F, mu=12.7°C(≈55°F), dist=41.3→tail → 持有到结算归零 -$19.52
+  - 实际 dist=0.9°F → center，根本不该建仓
+
+**修复内容：**
+- buildStationsFromMeta 加 `usesF` 标记（ICAO 以 K 开头 = 美国城市）
+- °F 城市：mu 转 °F（×9/5+32），sigma 转 °F（×1.8），buildDist 用 2°F bin 宽度
+- 桶位阈值 °F: center ≤ 1.8, near ≤ 3.6, tail > 3.6（= °C 阈值 × 1.8）
+- observe-log/forecast-log 加 muC/usesF 字段
+- 已修正 21 笔当前持仓的 bucket 标记
+- commit `d4dd359`
+
+**后续影响：**
+- 修复后美国城市 modelP 不再是 0，edge 计算第一次有意义
+- 大量原先看起来 "edge 很大" 的美国城市信号会消失（因为 modelP 从 0% 变成 20-30%）
+- tail 持仓数量会大幅减少（很多原先标 tail 的其实是 center/near）
+- 之前的回测结论（BUY_NO tail 85% 胜率）需要重新评估——其中大量 "tail" 实际是 center
+
 ### 已知bug（历史遗留）
 - BUY_NO 止损路径A（预报偏移止损）的 exitVal 计算有 bug（line 402-403），BUY_NO 用了 exitPrice*shares 而非 (1-exitPrice)*shares，但其他止损路径已正确。鹏哥决定不修，账户归零重开。
 - stoppedToday 跨 UTC 午夜清空 bug → 已改为24小时滚动窗口
