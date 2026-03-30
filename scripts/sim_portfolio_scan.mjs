@@ -496,14 +496,14 @@ async function main(){
         currentDist=dist;
         modelP=dist[pos.k]||0;
 
-        // ─── V2.1 TAIL持有到结算：跳过所有止盈止损 ───
-        const isTailHold = pos.bucket === 'tail' && rules.tailHoldToSettlement;
-        if(isTailHold){
-          // Tail positions: NO stop-loss, NO take-profit, hold to settlement
+        // ─── V2.1+ TAIL+NEAR 持有到结算：跳过所有止盈止损 ───
+        const isHoldToSettlement = (pos.bucket === 'tail' || pos.bucket === 'near') && rules.tailHoldToSettlement;
+        if(isHoldToSettlement){
+          // Tail + Near positions: NO stop-loss, NO take-profit, hold to settlement
           // Only log current state for monitoring
           const currentVal = pos.dir==='BUY_NO' ? pos.shares * currentNoP : pos.shares * currentYesP;
           const floatingPnl = currentVal - pos.cost;
-          actions.push(`   📌 TAIL持有: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | NO=${(currentNoP*100).toFixed(1)}% | 浮动$${floatingPnl.toFixed(2)} | 持有到结算`);
+          actions.push(`   📌 ${pos.bucket.toUpperCase()}持有: ${pos.station} ${pos.date} ${pos.tempLabel} ${pos.dir} | NO=${(currentNoP*100).toFixed(1)}% | 浮动$${floatingPnl.toFixed(2)} | 持有到结算`);
           continue; // skip ALL stop-loss / take-profit / sell logic
         }
 
