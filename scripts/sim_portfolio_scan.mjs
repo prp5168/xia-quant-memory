@@ -1510,7 +1510,7 @@ async function main(){
           // 纯观察模式 或 当日回撤已达上限：只记录信号，不实际建仓
           actions.push(`
 👁️ [观察] 信号: ${st.name} ${date}(${dayName}) ${title} ${dir} [${bucketType}]`);
-          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}% YES=${(yesP*100).toFixed(0)}%`);
+          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°${st.usesF?'F':'C'}), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}% YES=${(yesP*100).toFixed(0)}%`);
           actions.push(`   💵 模拟成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
         } else {
           const targetBookLabel = isYesExperimentCandidate ? '[YES实验]' : '';
@@ -1521,7 +1521,7 @@ async function main(){
           targetPf.cash=Math.round(targetPf.cash*100)/100;
           actions.push(`
 🛒 ${targetBookLabel}买入: ${st.name} ${date}(${dayName}) ${title} ${dir} [${bucketType}]`);
-          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°C), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}% YES=${(yesP*100).toFixed(0)}%`);
+          actions.push(`   💡 逻辑: WU预报max=${forecastMax}°C(调整${Math.round(mu*10)/10}°${st.usesF?'F':'C'}), ${reason}, edge=${(Math.abs(edge)*100).toFixed(1)}% NO=${(noP*100).toFixed(0)}% YES=${(yesP*100).toFixed(0)}%`);
           if(isYesExperimentCandidate) actions.push(`   🧪 规则: dayDiff=${localDayDiff} | YES区间${((yesRules.yesPriceMin ?? 0.1)*100).toFixed(0)}-${((yesRules.yesPriceMax ?? 0.4)*100).toFixed(0)}% | TP目标${(position.tpTargetYes*100).toFixed(1)}%`);
           actions.push(`   💵 实际成交: $${cost} | ${shares}股 | 均价${(avgPrice*100).toFixed(2)}%`);
           actions.push(`   📏 仓位: 上限$${budgetCap} | 滑点容忍${(maxSlippage*100).toFixed(0)}% | 深度内$${depthWithinSlippage>0?depthWithinSlippage.toFixed(2):'N/A'} → 预算$${budgetWant.toFixed(2)}`);
