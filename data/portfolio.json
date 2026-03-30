@@ -1,135 +1,7 @@
 {
   "initialCapital": 600,
-  "cash": 157.0902,
+  "cash": 249.4,
   "positions": [
-    {
-      "slug": "highest-temperature-in-nyc-on-march-29-2026-52-53f",
-      "station": "NYC",
-      "date": "2026-03-29",
-      "dayName": "Sunday",
-      "tempLabel": "52-53°F",
-      "k": 52,
-      "dir": "BUY_NO",
-      "bucket": "tail",
-      "entryPrice": 0.6745,
-      "shares": 29,
-      "cost": 19.56,
-      "entryTime": "2026-03-28T08:05:03.112Z",
-      "modelPAtEntry": 0,
-      "yesPAtEntry": 0.35,
-      "noPAtEntry": 0.65,
-      "edgeAtEntry": 0.35,
-      "forecastMaxAtEntry": 9,
-      "muAtEntry": 47.8,
-      "distFromMuAtEntry": 4.2,
-      "fills": [
-        {
-          "price": 0.67,
-          "shares": 16,
-          "cost": 10.72
-        },
-        {
-          "price": 0.68,
-          "shares": 13,
-          "cost": 8.84
-        }
-      ],
-      "muCAtEntry": 8.8,
-      "usesF": true
-    },
-    {
-      "slug": "highest-temperature-in-nyc-on-march-29-2026-54-55f",
-      "station": "NYC",
-      "date": "2026-03-29",
-      "dayName": "Sunday",
-      "tempLabel": "54-55°F",
-      "k": 54,
-      "dir": "BUY_NO",
-      "bucket": "tail",
-      "entryPrice": 0.8685,
-      "shares": 22.73,
-      "cost": 19.74,
-      "entryTime": "2026-03-28T08:05:03.112Z",
-      "modelPAtEntry": 0,
-      "yesPAtEntry": 0.155,
-      "noPAtEntry": 0.845,
-      "edgeAtEntry": 0.155,
-      "forecastMaxAtEntry": 9,
-      "muAtEntry": 47.8,
-      "distFromMuAtEntry": 6.2,
-      "fills": [
-        {
-          "price": 0.85,
-          "shares": 1.73,
-          "cost": 1.47
-        },
-        {
-          "price": 0.87,
-          "shares": 21,
-          "cost": 18.27
-        }
-      ],
-      "muCAtEntry": 8.8,
-      "usesF": true
-    },
-    {
-      "slug": "highest-temperature-in-istanbul-on-march-30-2026-5c",
-      "station": "Istanbul",
-      "date": "2026-03-30",
-      "dayName": "Monday",
-      "tempLabel": "5°C",
-      "k": 5,
-      "dir": "BUY_NO",
-      "bucket": "tail",
-      "entryPrice": 0.99,
-      "shares": 20,
-      "cost": 19.8,
-      "entryTime": "2026-03-29T18:05:03.726Z",
-      "modelPAtEntry": 0.023,
-      "yesPAtEntry": 0.25,
-      "noPAtEntry": 0.75,
-      "edgeAtEntry": 0.227,
-      "forecastMaxAtEntry": 11,
-      "muAtEntry": 10.7,
-      "distFromMuAtEntry": 5.7,
-      "fills": [
-        {
-          "price": 0.99,
-          "shares": 20,
-          "cost": 19.8
-        }
-      ],
-      "entryEdgeAtEntry": 0.227
-    },
-    {
-      "slug": "highest-temperature-in-istanbul-on-march-30-2026-4corbelow",
-      "station": "Istanbul",
-      "date": "2026-03-30",
-      "dayName": "Monday",
-      "tempLabel": "4°C or below",
-      "k": 4,
-      "dir": "BUY_NO",
-      "bucket": "tail",
-      "entryPrice": 0.99,
-      "shares": 20,
-      "cost": 19.8,
-      "entryTime": "2026-03-29T18:05:03.726Z",
-      "modelPAtEntry": 0,
-      "yesPAtEntry": 0.25,
-      "noPAtEntry": 0.75,
-      "edgeAtEntry": 0.25,
-      "forecastMaxAtEntry": 11,
-      "muAtEntry": 10.7,
-      "distFromMuAtEntry": 6.7,
-      "fills": [
-        {
-          "price": 0.99,
-          "shares": 20,
-          "cost": 19.8
-        }
-      ],
-      "entryEdgeAtEntry": 0.25
-    },
     {
       "slug": "highest-temperature-in-istanbul-on-march-30-2026-6c",
       "station": "Istanbul",
@@ -287,73 +159,6 @@
       "entryEdgeAtEntry": 0.155,
       "muCAtEntry": 24.7,
       "usesF": true
-    },
-    {
-      "slug": "highest-temperature-in-seattle-on-march-30-2026-50-51f",
-      "station": "Seattle",
-      "date": "2026-03-30",
-      "dayName": "Monday",
-      "tempLabel": "50-51°F",
-      "k": 50,
-      "dir": "BUY_NO",
-      "bucket": "center",
-      "entryPrice": 0.5929,
-      "shares": 32.89,
-      "cost": 19.5,
-      "entryTime": "2026-03-29T19:05:05.881Z",
-      "modelPAtEntry": 0,
-      "yesPAtEntry": 0.36,
-      "noPAtEntry": 0.64,
-      "edgeAtEntry": 0.36,
-      "forecastMaxAtEntry": 11,
-      "muAtEntry": 51.3,
-      "distFromMuAtEntry": 1.3,
-      "fills": [
-        {
-          "price": 0.53,
-          "shares": 9.89,
-          "cost": 5.24
-        },
-        {
-          "price": 0.62,
-          "shares": 23,
-          "cost": 14.26
-        }
-      ],
-      "entryEdgeAtEntry": 0.36,
-      "usesF": true,
-      "negativeEdgeCount": 0
-    },
-    {
-      "slug": "highest-temperature-in-seattle-on-march-30-2026-48-49f",
-      "station": "Seattle",
-      "date": "2026-03-30",
-      "dayName": "Monday",
-      "tempLabel": "48-49°F",
-      "k": 48,
-      "dir": "BUY_NO",
-      "bucket": "near",
-      "entryPrice": 0.7,
-      "shares": 8,
-      "cost": 5.6,
-      "entryTime": "2026-03-29T19:05:05.881Z",
-      "modelPAtEntry": 0,
-      "yesPAtEntry": 0.39,
-      "noPAtEntry": 0.61,
-      "edgeAtEntry": 0.39,
-      "forecastMaxAtEntry": 11,
-      "muAtEntry": 51.3,
-      "distFromMuAtEntry": 3.3,
-      "fills": [
-        {
-          "price": 0.7,
-          "shares": 8,
-          "cost": 5.6
-        }
-      ],
-      "entryEdgeAtEntry": 0.39,
-      "usesF": true,
-      "negativeEdgeCount": 0
     },
     {
       "slug": "highest-temperature-in-los-angeles-on-march-30-2026-58-59f",
@@ -549,37 +354,6 @@
       "negativeEdgeCount": 0
     },
     {
-      "slug": "highest-temperature-in-miami-on-march-30-2026-76-77f",
-      "station": "Miami",
-      "date": "2026-03-30",
-      "dayName": "Monday",
-      "tempLabel": "76-77°F",
-      "k": 76,
-      "dir": "BUY_NO",
-      "bucket": "near",
-      "entryPrice": 0.79,
-      "shares": 8,
-      "cost": 6.32,
-      "entryTime": "2026-03-29T22:05:04.471Z",
-      "modelPAtEntry": 0,
-      "yesPAtEntry": 0.22,
-      "noPAtEntry": 0.78,
-      "edgeAtEntry": 0.22,
-      "forecastMaxAtEntry": 26,
-      "muAtEntry": 78.8,
-      "distFromMuAtEntry": 2.8,
-      "fills": [
-        {
-          "price": 0.79,
-          "shares": 8,
-          "cost": 6.32
-        }
-      ],
-      "entryEdgeAtEntry": 0.22,
-      "usesF": true,
-      "negativeEdgeCount": 0
-    },
-    {
       "slug": "highest-temperature-in-miami-on-march-30-2026-80-81f",
       "station": "Miami",
       "date": "2026-03-30",
@@ -683,37 +457,6 @@
       "usesF": true
     },
     {
-      "slug": "highest-temperature-in-san-francisco-on-march-30-2026-70-71f",
-      "station": "San Francisco",
-      "date": "2026-03-30",
-      "dayName": "Monday",
-      "tempLabel": "70-71°F",
-      "k": 70,
-      "dir": "BUY_NO",
-      "bucket": "near",
-      "entryPrice": 0.74,
-      "shares": 3,
-      "cost": 2.22,
-      "entryTime": "2026-03-30T00:05:02.764Z",
-      "modelPAtEntry": 0,
-      "yesPAtEntry": 0.265,
-      "noPAtEntry": 0.735,
-      "edgeAtEntry": 0.265,
-      "forecastMaxAtEntry": 20,
-      "muAtEntry": 68,
-      "distFromMuAtEntry": 2,
-      "fills": [
-        {
-          "price": 0.74,
-          "shares": 3,
-          "cost": 2.22
-        }
-      ],
-      "entryEdgeAtEntry": 0.265,
-      "usesF": true,
-      "negativeEdgeCount": 0
-    },
-    {
       "slug": "highest-temperature-in-nyc-on-march-30-2026-66-67f",
       "station": "NYC",
       "date": "2026-03-30",
@@ -745,85 +488,6 @@
       "entryEdgeAtEntry": 0.21
     },
     {
-      "slug": "highest-temperature-in-atlanta-on-march-30-2026-72-73f",
-      "station": "Atlanta",
-      "date": "2026-03-30",
-      "dayName": "Monday",
-      "tempLabel": "72-73°F",
-      "k": 72,
-      "dir": "BUY_NO",
-      "bucket": "near",
-      "entryPrice": 0.7446,
-      "shares": 26,
-      "cost": 19.36,
-      "entryTime": "2026-03-30T00:48:49.619Z",
-      "modelPAtEntry": 0.109,
-      "yesPAtEntry": 0.275,
-      "noPAtEntry": 0.725,
-      "edgeAtEntry": 0.166,
-      "forecastMaxAtEntry": 24,
-      "muCAtEntry": 23.7,
-      "muAtEntry": 74.7,
-      "usesF": true,
-      "distFromMuAtEntry": 2.7,
-      "fills": [
-        {
-          "price": 0.74,
-          "shares": 14,
-          "cost": 10.36
-        },
-        {
-          "price": 0.75,
-          "shares": 12,
-          "cost": 9
-        }
-      ],
-      "entryEdgeAtEntry": 0.166,
-      "negativeEdgeCount": 0
-    },
-    {
-      "slug": "highest-temperature-in-houston-on-march-30-2026-82-83f",
-      "station": "Houston",
-      "date": "2026-03-30",
-      "dayName": "Monday",
-      "tempLabel": "82-83°F",
-      "k": 82,
-      "dir": "BUY_NO",
-      "bucket": "near",
-      "entryPrice": 0.6954,
-      "shares": 27.94,
-      "cost": 19.43,
-      "entryTime": "2026-03-30T00:48:49.619Z",
-      "modelPAtEntry": 0.093,
-      "yesPAtEntry": 0.35,
-      "noPAtEntry": 0.65,
-      "edgeAtEntry": 0.257,
-      "forecastMaxAtEntry": 30,
-      "muCAtEntry": 29.7,
-      "muAtEntry": 85.5,
-      "usesF": true,
-      "distFromMuAtEntry": 3.5,
-      "fills": [
-        {
-          "price": 0.69,
-          "shares": 18.94,
-          "cost": 13.07
-        },
-        {
-          "price": 0.7,
-          "shares": 7,
-          "cost": 4.9
-        },
-        {
-          "price": 0.73,
-          "shares": 2,
-          "cost": 1.46
-        }
-      ],
-      "entryEdgeAtEntry": 0.257,
-      "negativeEdgeCount": 0
-    },
-    {
       "slug": "highest-temperature-in-denver-on-march-30-2026-76-77f",
       "station": "Denver",
       "date": "2026-03-30",
@@ -853,6 +517,69 @@
         }
       ],
       "entryEdgeAtEntry": 0.279
+    },
+    {
+      "slug": "highest-temperature-in-denver-on-march-30-2026-78-79f",
+      "station": "Denver",
+      "date": "2026-03-30",
+      "dayName": "Monday",
+      "tempLabel": "78-79°F",
+      "k": 78,
+      "dir": "BUY_NO",
+      "bucket": "near",
+      "entryPrice": 0.73,
+      "shares": 27,
+      "cost": 19.71,
+      "entryTime": "2026-03-30T03:05:03.428Z",
+      "modelPAtEntry": 0.089,
+      "yesPAtEntry": 0.285,
+      "noPAtEntry": 0.715,
+      "edgeAtEntry": 0.196,
+      "forecastMaxAtEntry": 27,
+      "muCAtEntry": 27,
+      "muAtEntry": 80.6,
+      "usesF": true,
+      "distFromMuAtEntry": 2.6,
+      "fills": [
+        {
+          "price": 0.73,
+          "shares": 27,
+          "cost": 19.71
+        }
+      ],
+      "entryEdgeAtEntry": 0.196,
+      "negativeEdgeCount": 0
+    },
+    {
+      "slug": "highest-temperature-in-nyc-on-march-31-2026-72-73f",
+      "station": "NYC",
+      "date": "2026-03-31",
+      "dayName": "Tuesday",
+      "tempLabel": "72-73°F",
+      "k": 72,
+      "dir": "BUY_NO",
+      "bucket": "tail",
+      "entryPrice": 0.7,
+      "shares": 28,
+      "cost": 19.6,
+      "entryTime": "2026-03-30T08:05:03.991Z",
+      "modelPAtEntry": 0.096,
+      "yesPAtEntry": 0.305,
+      "noPAtEntry": 0.695,
+      "edgeAtEntry": 0.209,
+      "forecastMaxAtEntry": 20,
+      "muCAtEntry": 19.7,
+      "muAtEntry": 67.5,
+      "usesF": true,
+      "distFromMuAtEntry": 4.5,
+      "fills": [
+        {
+          "price": 0.7,
+          "shares": 28,
+          "cost": 19.6
+        }
+      ],
+      "entryEdgeAtEntry": 0.209
     }
   ],
   "closedTrades": [
@@ -3378,11 +3105,390 @@
       "exitTime": "2026-03-30T02:05:03.792Z",
       "pnl": 0.2,
       "reason": "resolved"
+    },
+    {
+      "slug": "highest-temperature-in-miami-on-march-30-2026-76-77f",
+      "station": "Miami",
+      "date": "2026-03-30",
+      "dayName": "Monday",
+      "tempLabel": "76-77°F",
+      "k": 76,
+      "dir": "BUY_NO",
+      "bucket": "near",
+      "entryPrice": 0.79,
+      "shares": 8,
+      "cost": 6.32,
+      "entryTime": "2026-03-29T22:05:04.471Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.22,
+      "noPAtEntry": 0.78,
+      "edgeAtEntry": 0.22,
+      "forecastMaxAtEntry": 26,
+      "muAtEntry": 78.8,
+      "distFromMuAtEntry": 2.8,
+      "fills": [
+        {
+          "price": 0.79,
+          "shares": 8,
+          "cost": 6.32
+        }
+      ],
+      "entryEdgeAtEntry": 0.22,
+      "usesF": true,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.84,
+      "exitTime": "2026-03-30T03:05:03.428Z",
+      "pnl": 0.4,
+      "reason": "take_profit_edge_decay_40pct"
+    },
+    {
+      "slug": "highest-temperature-in-seattle-on-march-30-2026-50-51f",
+      "station": "Seattle",
+      "date": "2026-03-30",
+      "dayName": "Monday",
+      "tempLabel": "50-51°F",
+      "k": 50,
+      "dir": "BUY_NO",
+      "bucket": "center",
+      "entryPrice": 0.5929,
+      "shares": 32.89,
+      "cost": 19.5,
+      "entryTime": "2026-03-29T19:05:05.881Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.36,
+      "noPAtEntry": 0.64,
+      "edgeAtEntry": 0.36,
+      "forecastMaxAtEntry": 11,
+      "muAtEntry": 51.3,
+      "distFromMuAtEntry": 1.3,
+      "fills": [
+        {
+          "price": 0.53,
+          "shares": 9.89,
+          "cost": 5.24
+        },
+        {
+          "price": 0.62,
+          "shares": 23,
+          "cost": 14.26
+        }
+      ],
+      "entryEdgeAtEntry": 0.36,
+      "usesF": true,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.6487,
+      "exitTime": "2026-03-30T03:05:03.428Z",
+      "pnl": 1.84,
+      "reason": "take_profit_60pct_edge_captured"
+    },
+    {
+      "slug": "highest-temperature-in-istanbul-on-march-30-2026-4corbelow",
+      "station": "Istanbul",
+      "date": "2026-03-30",
+      "dayName": "Monday",
+      "tempLabel": "4°C or below",
+      "k": 4,
+      "dir": "BUY_NO",
+      "bucket": "tail",
+      "entryPrice": 0.99,
+      "shares": 20,
+      "cost": 19.8,
+      "entryTime": "2026-03-29T18:05:03.726Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.25,
+      "noPAtEntry": 0.75,
+      "edgeAtEntry": 0.25,
+      "forecastMaxAtEntry": 11,
+      "muAtEntry": 10.7,
+      "distFromMuAtEntry": 6.7,
+      "fills": [
+        {
+          "price": 0.99,
+          "shares": 20,
+          "cost": 19.8
+        }
+      ],
+      "entryEdgeAtEntry": 0.25,
+      "exitPrice": 0,
+      "exitTime": "2026-03-30T04:05:03.528Z",
+      "pnl": 0.2,
+      "reason": "resolved"
+    },
+    {
+      "slug": "highest-temperature-in-istanbul-on-march-30-2026-5c",
+      "station": "Istanbul",
+      "date": "2026-03-30",
+      "dayName": "Monday",
+      "tempLabel": "5°C",
+      "k": 5,
+      "dir": "BUY_NO",
+      "bucket": "tail",
+      "entryPrice": 0.99,
+      "shares": 20,
+      "cost": 19.8,
+      "entryTime": "2026-03-29T18:05:03.726Z",
+      "modelPAtEntry": 0.023,
+      "yesPAtEntry": 0.25,
+      "noPAtEntry": 0.75,
+      "edgeAtEntry": 0.227,
+      "forecastMaxAtEntry": 11,
+      "muAtEntry": 10.7,
+      "distFromMuAtEntry": 5.7,
+      "fills": [
+        {
+          "price": 0.99,
+          "shares": 20,
+          "cost": 19.8
+        }
+      ],
+      "entryEdgeAtEntry": 0.227,
+      "exitPrice": 0,
+      "exitTime": "2026-03-30T04:05:03.528Z",
+      "pnl": 0.2,
+      "reason": "resolved"
+    },
+    {
+      "slug": "highest-temperature-in-atlanta-on-march-30-2026-72-73f",
+      "station": "Atlanta",
+      "date": "2026-03-30",
+      "dayName": "Monday",
+      "tempLabel": "72-73°F",
+      "k": 72,
+      "dir": "BUY_NO",
+      "bucket": "near",
+      "entryPrice": 0.7446,
+      "shares": 26,
+      "cost": 19.36,
+      "entryTime": "2026-03-30T00:48:49.619Z",
+      "modelPAtEntry": 0.109,
+      "yesPAtEntry": 0.275,
+      "noPAtEntry": 0.725,
+      "edgeAtEntry": 0.166,
+      "forecastMaxAtEntry": 24,
+      "muCAtEntry": 23.7,
+      "muAtEntry": 74.7,
+      "usesF": true,
+      "distFromMuAtEntry": 2.7,
+      "fills": [
+        {
+          "price": 0.74,
+          "shares": 14,
+          "cost": 10.36
+        },
+        {
+          "price": 0.75,
+          "shares": 12,
+          "cost": 9
+        }
+      ],
+      "entryEdgeAtEntry": 0.166,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.6042,
+      "exitTime": "2026-03-30T05:05:04.060Z",
+      "pnl": -3.75,
+      "reason": "stop_loss_forecast_shift_6C",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-san-francisco-on-march-30-2026-70-71f",
+      "station": "San Francisco",
+      "date": "2026-03-30",
+      "dayName": "Monday",
+      "tempLabel": "70-71°F",
+      "k": 70,
+      "dir": "BUY_NO",
+      "bucket": "near",
+      "entryPrice": 0.74,
+      "shares": 3,
+      "cost": 2.22,
+      "entryTime": "2026-03-30T00:05:02.764Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.265,
+      "noPAtEntry": 0.735,
+      "edgeAtEntry": 0.265,
+      "forecastMaxAtEntry": 20,
+      "muAtEntry": 68,
+      "distFromMuAtEntry": 2,
+      "fills": [
+        {
+          "price": 0.74,
+          "shares": 3,
+          "cost": 2.22
+        }
+      ],
+      "entryEdgeAtEntry": 0.265,
+      "usesF": true,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.72,
+      "exitTime": "2026-03-30T05:05:04.060Z",
+      "pnl": -0.06,
+      "reason": "stop_loss_forecast_shift_2C",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-houston-on-march-30-2026-82-83f",
+      "station": "Houston",
+      "date": "2026-03-30",
+      "dayName": "Monday",
+      "tempLabel": "82-83°F",
+      "k": 82,
+      "dir": "BUY_NO",
+      "bucket": "near",
+      "entryPrice": 0.6954,
+      "shares": 27.94,
+      "cost": 19.43,
+      "entryTime": "2026-03-30T00:48:49.619Z",
+      "modelPAtEntry": 0.093,
+      "yesPAtEntry": 0.35,
+      "noPAtEntry": 0.65,
+      "edgeAtEntry": 0.257,
+      "forecastMaxAtEntry": 30,
+      "muCAtEntry": 29.7,
+      "muAtEntry": 85.5,
+      "usesF": true,
+      "distFromMuAtEntry": 3.5,
+      "fills": [
+        {
+          "price": 0.69,
+          "shares": 18.94,
+          "cost": 13.07
+        },
+        {
+          "price": 0.7,
+          "shares": 7,
+          "cost": 4.9
+        },
+        {
+          "price": 0.73,
+          "shares": 2,
+          "cost": 1.46
+        }
+      ],
+      "entryEdgeAtEntry": 0.257,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.6053,
+      "exitTime": "2026-03-30T06:05:04.956Z",
+      "pnl": -2.6,
+      "reason": "stop_loss_forecast_shift_3C",
+      "orderType": "市价(强制)"
+    },
+    {
+      "slug": "highest-temperature-in-seattle-on-march-30-2026-48-49f",
+      "station": "Seattle",
+      "date": "2026-03-30",
+      "dayName": "Monday",
+      "tempLabel": "48-49°F",
+      "k": 48,
+      "dir": "BUY_NO",
+      "bucket": "near",
+      "entryPrice": 0.7,
+      "shares": 8,
+      "cost": 5.6,
+      "entryTime": "2026-03-29T19:05:05.881Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.39,
+      "noPAtEntry": 0.61,
+      "edgeAtEntry": 0.39,
+      "forecastMaxAtEntry": 11,
+      "muAtEntry": 51.3,
+      "distFromMuAtEntry": 3.3,
+      "fills": [
+        {
+          "price": 0.7,
+          "shares": 8,
+          "cost": 5.6
+        }
+      ],
+      "entryEdgeAtEntry": 0.39,
+      "usesF": true,
+      "negativeEdgeCount": 0,
+      "exitPrice": 0.78,
+      "exitTime": "2026-03-30T06:05:04.956Z",
+      "pnl": 0.64,
+      "reason": "take_profit_edge_decay_40pct"
+    },
+    {
+      "slug": "highest-temperature-in-nyc-on-march-29-2026-54-55f",
+      "station": "NYC",
+      "date": "2026-03-29",
+      "dayName": "Sunday",
+      "tempLabel": "54-55°F",
+      "k": 54,
+      "dir": "BUY_NO",
+      "bucket": "tail",
+      "entryPrice": 0.8685,
+      "shares": 22.73,
+      "cost": 19.74,
+      "entryTime": "2026-03-28T08:05:03.112Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.155,
+      "noPAtEntry": 0.845,
+      "edgeAtEntry": 0.155,
+      "forecastMaxAtEntry": 9,
+      "muAtEntry": 47.8,
+      "distFromMuAtEntry": 6.2,
+      "fills": [
+        {
+          "price": 0.85,
+          "shares": 1.73,
+          "cost": 1.47
+        },
+        {
+          "price": 0.87,
+          "shares": 21,
+          "cost": 18.27
+        }
+      ],
+      "muCAtEntry": 8.8,
+      "usesF": true,
+      "exitPrice": 0,
+      "exitTime": "2026-03-30T08:05:03.991Z",
+      "pnl": 2.99,
+      "reason": "resolved"
+    },
+    {
+      "slug": "highest-temperature-in-nyc-on-march-29-2026-52-53f",
+      "station": "NYC",
+      "date": "2026-03-29",
+      "dayName": "Sunday",
+      "tempLabel": "52-53°F",
+      "k": 52,
+      "dir": "BUY_NO",
+      "bucket": "tail",
+      "entryPrice": 0.6745,
+      "shares": 29,
+      "cost": 19.56,
+      "entryTime": "2026-03-28T08:05:03.112Z",
+      "modelPAtEntry": 0,
+      "yesPAtEntry": 0.35,
+      "noPAtEntry": 0.65,
+      "edgeAtEntry": 0.35,
+      "forecastMaxAtEntry": 9,
+      "muAtEntry": 47.8,
+      "distFromMuAtEntry": 4.2,
+      "fills": [
+        {
+          "price": 0.67,
+          "shares": 16,
+          "cost": 10.72
+        },
+        {
+          "price": 0.68,
+          "shares": 13,
+          "cost": 8.84
+        }
+      ],
+      "muCAtEntry": 8.8,
+      "usesF": true,
+      "exitPrice": 1,
+      "exitTime": "2026-03-30T08:05:03.991Z",
+      "pnl": -19.56,
+      "reason": "resolved"
     }
   ],
-  "totalPnl": -38.36443721902421,
+  "totalPnl": -58.07486821902421,
   "createdAt": "2026-03-18T04:31:00Z",
-  "updatedAt": "2026-03-30T02:06:04.221Z",
+  "updatedAt": "2026-03-30T08:05:46.204Z",
   "rules": {
     "version": "v2",
     "strategy": "buy_no_tail_near_hold_to_settlement",
@@ -3423,7 +3529,13 @@
     "highest-temperature-in-chicago-on-march-29-2026-62-63f": "2026-03-30T00:48:49.619Z",
     "highest-temperature-in-miami-on-march-29-2026-80-81f": "2026-03-30T00:48:49.619Z",
     "highest-temperature-in-miami-on-march-29-2026-78-79f": "2026-03-30T00:48:49.619Z",
-    "highest-temperature-in-chicago-on-march-30-2026-74-75f": "2026-03-30T02:05:03.792Z"
+    "highest-temperature-in-chicago-on-march-30-2026-74-75f": "2026-03-30T02:05:03.792Z",
+    "highest-temperature-in-miami-on-march-30-2026-76-77f": "2026-03-30T03:05:03.428Z",
+    "highest-temperature-in-seattle-on-march-30-2026-50-51f": "2026-03-30T03:05:03.428Z",
+    "highest-temperature-in-atlanta-on-march-30-2026-72-73f": "2026-03-30T05:05:04.060Z",
+    "highest-temperature-in-san-francisco-on-march-30-2026-70-71f": "2026-03-30T05:05:04.060Z",
+    "highest-temperature-in-houston-on-march-30-2026-82-83f": "2026-03-30T06:05:04.956Z",
+    "highest-temperature-in-seattle-on-march-30-2026-48-49f": "2026-03-30T06:05:04.956Z"
   },
   "v1_archive": {
     "closedTrades": 44,
